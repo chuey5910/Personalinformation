@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบเก็บข้อมูลบุคคล — 17 จังหวัดภาคเหนือ</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- ไลบรารีทั้งหมดเสิร์ฟจากเซิร์ฟเวอร์เอง (โฟลเดอร์ assets/) — ใช้งานในเครือข่ายภายในที่ไม่มีอินเทอร์เน็ตได้ -->
+<link href="assets/sarabun.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/tabler-icons.min.css">
+<script src="assets/chart.umd.js"></script>
+<script src="assets/xlsx.full.min.js"></script>
 <style>
 :root{
   --font-sans:'Sarabun',system-ui,sans-serif;
@@ -236,6 +236,32 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
 .photo-clear{background:none;border:none;color:#C44;font-size:12px;cursor:pointer;}
 .mg6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.2rem;}@media(max-width:640px){.mg6{grid-template-columns:1fr 1fr;}}
 .dashsync{font-size:12px;color:var(--color-text-secondary);margin:0 0 10px;min-height:16px;display:flex;align-items:center;gap:5px;}
+/* ===== ระบบ login / จัดการผู้ใช้ ===== */
+.auth-ov{position:fixed;inset:0;background:var(--color-background-primary,#fff);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding:48px 16px;overflow:auto;}
+.auth-ov.show{display:flex;}
+.auth-box{width:100%;max-width:400px;background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg,12px);padding:26px 24px;}
+.auth-box h2{font-size:18px;margin:0 0 2px;display:flex;align-items:center;gap:8px;}
+.auth-box .sub{font-size:12.5px;color:var(--color-text-tertiary);margin-bottom:16px;}
+.auth-box .fl{margin-bottom:10px;}
+.auth-box label{display:block;font-size:12.5px;margin-bottom:4px;color:var(--color-text-secondary);}
+.auth-box input,.auth-box select{width:100%;padding:8px 10px;border:1px solid var(--color-border-secondary,#ccc);border-radius:8px;font-size:14px;font-family:inherit;background:var(--color-background-primary);color:var(--color-text-primary);}
+.auth-btn{width:100%;padding:10px;border:0;border-radius:8px;background:#1D9E75;color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;}
+.auth-alt{font-size:12.5px;text-align:center;margin-top:12px;color:var(--color-text-tertiary);}
+.auth-alt a{color:#378ADD;cursor:pointer;text-decoration:underline;}
+.auth-err{font-size:12.5px;color:#D85A30;margin-top:8px;min-height:16px;}
+.auth-ok{color:#1D9E75;}
+.usr-chip{display:inline-flex;align-items:center;gap:6px;}
+.usr-out{border:1px solid var(--color-border-secondary,#ccc);background:transparent;color:inherit;border-radius:6px;font-size:11.5px;padding:3px 8px;cursor:pointer;font-family:inherit;}
+.adm-sec{margin-bottom:1.1rem;}
+.adm-sec h3{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:6px;}
+.adm-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.adm-tbl th,.adm-tbl td{padding:6px 8px;border-bottom:1px solid var(--color-border-tertiary);text-align:left;vertical-align:top;}
+.adm-tbl th{font-weight:600;color:var(--color-text-secondary);white-space:nowrap;}
+.adm-act{border:0;border-radius:6px;font-size:11.5px;padding:4px 9px;cursor:pointer;font-family:inherit;color:#fff;margin-right:4px;}
+.adm-ap{background:#1D9E75;}.adm-rj{background:#D85A30;}
+.bge-pend{background:#E08A1E;color:#fff;border-radius:6px;padding:2px 7px;font-size:11px;}
+.bge-appr{background:#1D9E75;color:#fff;border-radius:6px;padding:2px 7px;font-size:11px;}
+.bge-adm{background:#7F77DD;color:#fff;border-radius:6px;padding:2px 7px;font-size:11px;}
 </style>
 </head>
 <body>
@@ -245,7 +271,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
     <div class="brand-ic"><i class="ti ti-database"></i></div>
     <div class="brand-tx"><h1>ระบบเก็บข้อมูลบุคคล</h1><p>17 จังหวัดภาคเหนือ</p></div>
   </div>
-  <div class="appbar-meta"><span class="dot-live"></span> บันทึกอัตโนมัติในเครื่องนี้ · <span id="recCount">0</span> รายการ</div>
+  <div class="appbar-meta usr-chip"><span class="dot-live"></span> <span id="recCount">0</span> รายการ · <i class="ti ti-user-circle"></i><span id="curUser">ยังไม่เข้าสู่ระบบ</span> <button class="usr-out" id="btnLogout" style="display:none;" onclick="doLogout()">ออกจากระบบ</button></div>
 </div></div>
 
 <div class="wrap">
@@ -256,6 +282,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
   <button class="tb" onclick="sw('dash')"><i class="ti ti-chart-bar" style="margin-right:4px;font-size:13px;"></i>Dashboard</button>
   <button class="tb" onclick="sw('list')"><i class="ti ti-list" style="margin-right:4px;font-size:13px;"></i>รายชื่อ</button>
   <button class="tb" onclick="sw('prov')"><i class="ti ti-map-pin" style="margin-right:4px;font-size:13px;"></i>สรุป</button>
+  <button class="tb" id="tbAdmin" style="display:none;" onclick="sw('admin')"><i class="ti ti-shield-lock" style="margin-right:4px;font-size:13px;"></i>จัดการระบบ</button>
 </div>
 
 <div id="tab-form" class="panel on">
@@ -461,9 +488,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
       <i class="ti ti-chevron-down" style="color:var(--color-text-tertiary);"></i>
     </div>
     <div class="gsbody" id="gsbody">
-      <div class="fl"><label>Server URL — เว้นว่างได้ถ้าเปิดหน้านี้ผ่าน CHUEY-Server โดยตรง (ใช้เซิร์ฟเวอร์เดียวกันอัตโนมัติ)</label><input id="gsUrl" placeholder="http://ไอพีเซิร์ฟเวอร์:8080"></div>
-      <div class="fl" style="margin-top:8px;"><label>API Token (เฉพาะกรณีตั้งค่า API_TOKEN ไว้ที่เซิร์ฟเวอร์)</label><input id="gsToken" type="password" placeholder="เว้นว่างถ้าไม่ได้ใช้ token"></div>
-      <div class="gshint"><i class="ti ti-info-circle"></i> ข้อมูลกลางถูกเก็บบน CHUEY-Server (ไฟล์ data/records.json) — ค่าที่กรอกจะถูกจดจำไว้ในเครื่องนี้ ไม่ต้องกรอกซ้ำ</div>
+      <div class="gshint"><i class="ti ti-info-circle"></i> ข้อมูลกลางถูกเก็บบน CHUEY-Server (ไฟล์ data/records.json) — บันทึก/แก้ไข/ลบจะซิงก์กับเซิร์ฟเวอร์อัตโนมัติ · เพิ่มข้อมูลได้ทุกเจ้าหน้าที่ที่อนุมัติแล้ว · แก้ไข/ลบได้เฉพาะ admin</div>
       <div class="gsstatus" id="gsStatus"></div>
     </div>
   </div>
@@ -491,12 +516,53 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
   <div class="subtabs"><button class="subtab on" onclick="swSub('p')">แยกจังหวัด</button><button class="subtab" onclick="swSub('g')">แยกกลุ่มบุคคล</button><button class="subtab" onclick="swSub('t')">แยกประเภท</button></div>
   <div class="tc"><div class="thead2"><span id="provTitle">จำนวนคนแยกจังหวัด (17 จังหวัด)</span></div><div id="provlist"></div></div>
 </div>
+
+<div id="tab-admin" class="panel">
+  <div class="adm-sec">
+    <h3><i class="ti ti-user-exclamation" style="color:#E08A1E;"></i> ผู้ใช้รออนุมัติ (<span id="admPendCnt">0</span>)</h3>
+    <div class="tc" style="overflow-x:auto;"><table class="adm-tbl"><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ-สกุล</th><th>จังหวัด</th><th>สมัครเมื่อ</th><th>ดำเนินการ</th></tr></thead><tbody id="admPendTb"></tbody></table></div>
+  </div>
+  <div class="adm-sec">
+    <h3><i class="ti ti-users" style="color:#378ADD;"></i> ผู้ใช้ทั้งหมด</h3>
+    <div class="tc" style="overflow-x:auto;"><table class="adm-tbl"><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ-สกุล</th><th>จังหวัด</th><th>สิทธิ์</th><th>สถานะ</th><th>ดำเนินการ</th></tr></thead><tbody id="admUserTb"></tbody></table></div>
+  </div>
+  <div class="adm-sec">
+    <h3><i class="ti ti-history" style="color:#7F77DD;"></i> บันทึกการเข้าออก/การใช้งานระบบ (audit log) <button class="usr-out" onclick="renderAdmin()" style="margin-left:6px;"><i class="ti ti-refresh"></i> รีเฟรช</button></h3>
+    <div class="tc" style="overflow-x:auto;max-height:480px;overflow-y:auto;"><table class="adm-tbl"><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>รายละเอียด</th><th>IP</th></tr></thead><tbody id="admAuditTb"></tbody></table></div>
+  </div>
+</div>
 </div>
 
 <div class="foot">
-  ข้อมูลกลางถูกเก็บบน CHUEY-Server (ปุ่ม "ส่งขึ้น CHUEY-Server" ที่แท็บรายชื่อ) และมีสำเนาในเบราว์เซอร์ของเครื่องนี้ (localStorage) — ควรกด Export เก็บไฟล์สำรองเป็นระยะ<br>
+  ข้อมูลกลางถูกเก็บบน CHUEY-Server และซิงก์อัตโนมัติเมื่อบันทึก — เข้าใช้งานได้เฉพาะเจ้าหน้าที่ที่ลงทะเบียนและได้รับอนุมัติ · แก้ไข/ลบข้อมูลได้เฉพาะ admin · ระบบบันทึกการเข้า-ออกทุกครั้ง<br>
   ข้อมูลนี้มีข้อมูลส่วนบุคคลอ่อนไหว โปรดจัดเก็บอย่างปลอดภัยและปฏิบัติตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)
 </div>
+</div>
+
+<div class="auth-ov" id="authOverlay">
+  <div class="auth-box">
+    <div id="authLogin">
+      <h2><i class="ti ti-shield-lock" style="color:#1D9E75;"></i> เข้าสู่ระบบ</h2>
+      <div class="sub">ระบบเก็บข้อมูลบุคคล 17 จังหวัดภาคเหนือ — เฉพาะเจ้าหน้าที่ที่ได้รับอนุมัติ</div>
+      <div class="fl"><label>ชื่อผู้ใช้</label><input id="loginUser" autocomplete="username"></div>
+      <div class="fl"><label>รหัสผ่าน</label><input id="loginPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="auth-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
+      <div class="auth-err" id="loginErr"></div>
+      <div class="auth-alt">ยังไม่มีบัญชี? <a onclick="authMode('reg')">ลงทะเบียนเจ้าหน้าที่</a></div>
+    </div>
+    <div id="authReg" style="display:none;">
+      <h2><i class="ti ti-user-plus" style="color:#378ADD;"></i> ลงทะเบียนเจ้าหน้าที่</h2>
+      <div class="sub">หลังลงทะเบียนต้องรอ admin อนุมัติก่อน จึงจะเข้าใช้งานได้</div>
+      <div class="fl"><label>ชื่อ-สกุล</label><input id="regName"></div>
+      <div class="fl"><label>จังหวัดที่ประจำการ</label><select id="regProv"><option value="">— เลือกจังหวัด —</option></select></div>
+      <div class="fl"><label>ชื่อผู้ใช้ (a-z, 0-9, _ . @ -)</label><input id="regUser" autocomplete="username"></div>
+      <div class="fl"><label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label><input id="regPass" type="password" autocomplete="new-password"></div>
+      <div class="fl"><label>ยืนยันรหัสผ่าน</label><input id="regPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <button class="auth-btn" style="background:#378ADD;" onclick="doRegister()">ลงทะเบียน</button>
+      <div class="auth-err" id="regErr"></div>
+      <div class="auth-alt">มีบัญชีแล้ว? <a onclick="authMode('login')">เข้าสู่ระบบ</a></div>
+    </div>
+  </div>
 </div>
 
 <div class="dtl" id="dtlModal" onclick="if(event.target===this)closeDtl()"><div class="dtl-box" id="dtlBox"></div></div>
@@ -521,19 +587,14 @@ const SOCIALS=[['facebook','Facebook','ti-brand-facebook'],['ig','Instagram','ti
 const CUR_BE=2569;
 const ADDR_PREFIX=['reg','cur','work','fa','mo','sp','vreg','vcur','vwork','vfa','vmo','vsp','plmain','plsec','caseloc'];
 const AVC=['a1','a2','a3','a4','a5','a6'];
-const LS_KEY='person_records_v1', LS_URL='person_server_url_v1', LS_TOKEN='person_server_token_v1';
+const LS_KEY='person_records_v1'; // คีย์เก่า — ใช้เพื่อล้างข้อมูลที่เคยค้างในเบราว์เซอร์เท่านั้น (ข้อมูลจริงอยู่บนเซิร์ฟเวอร์)
 const emptyAddr=()=>({house:'',moo:'',village:'',soi:'',road:'',prov:'',dist:'',subdist:'',zip:''});
 const emptySocial=()=>({facebook:'',ig:'',x:'',linkedin:'',youtube:'',tiktok:'',podcast:'',website:'',otherName:'',otherUrl:''});
 let ADDR_DATA=null,addrUseText=false;
 
-const SEED=[
-  {fn:'สมชาย',ln:'ใจดี',nid:'1500100123456',dobD:'12',dobM:'มีนาคม',dobY:'2537',ag:32,gd:'ชาย',ms:'สมรส',pv:'เชียงใหม่',grp:5,sub:'',subOther:'',ph:'081-111-1111',em:'a@mail.com',addrReg:{house:'1',moo:'4',village:'บ้านสันทราย',soi:'',road:'นิมมานเหมินท์',prov:'เชียงใหม่',dist:'เมืองเชียงใหม่',subdist:'สุเทพ',zip:'50200'},addrCur:emptyAddr(),addrWork:emptyAddr(),addrFa:emptyAddr(),addrMo:emptyAddr(),addrSp:emptyAddr(),jo:'รับจ้าง',co:'-',ed:'มัธยมศึกษา',fc:'-',faN:'สมบัติ',faL:'ใจดี',faA:60,moN:'สมจิต',moL:'ใจดี',moA:58,spN:'สมศรี',spL:'ใจดี',spA:30,spSt:'อยู่ร่วมกัน',ch:'2',social:emptySocial()},
-  {fn:'สมหญิง',ln:'รักดี',nid:'1570500234567',dobD:'5',dobM:'กรกฎาคม',dobY:'2541',ag:28,gd:'หญิง',ms:'โสด',pv:'เชียงราย',grp:7,sub:'',subOther:'',ph:'082-222-2222',em:'b@mail.com',addrReg:{house:'2',moo:'',village:'',soi:'5',road:'พหลโยธิน',prov:'เชียงราย',dist:'เมืองเชียงราย',subdist:'เวียง',zip:'57000'},addrCur:emptyAddr(),addrWork:emptyAddr(),addrFa:emptyAddr(),addrMo:emptyAddr(),addrSp:emptyAddr(),jo:'นักกิจกรรม',co:'-',ed:'ปริญญาตรี',fc:'รัฐศาสตร์',faN:'',faL:'',faA:0,moN:'',moL:'',moA:0,spN:'',spL:'',spA:0,spSt:'',ch:'0',social:{...emptySocial(),facebook:'fb.com/somying',x:'@somying'}},
-  {fn:'กานดา',ln:'สุขใส',nid:'1650500456789',dobD:'20',dobM:'ธันวาคม',dobY:'2547',ag:22,gd:'หญิง',ms:'โสด',pv:'พิษณุโลก',grp:11,sub:'V2',subOther:'',ph:'084-444-4444',em:'d@mail.com',addrReg:{house:'4',moo:'',village:'',soi:'',road:'บรมไตรโลกนาถ',prov:'พิษณุโลก',dist:'เมืองพิษณุโลก',subdist:'ในเมือง',zip:'65000'},addrCur:emptyAddr(),addrWork:emptyAddr(),addrFa:emptyAddr(),addrMo:emptyAddr(),addrSp:emptyAddr(),jo:'-',co:'-',ed:'มัธยมศึกษา',fc:'-',faN:'',faL:'',faA:0,moN:'',moL:'',moA:0,spN:'',spL:'',spA:0,spSt:'',ch:'0',social:emptySocial()},
-];
 let recs=[];
-function loadState(){try{const s=localStorage.getItem(LS_KEY);if(s){const a=JSON.parse(s);if(Array.isArray(a))recs=a;else recs=JSON.parse(JSON.stringify(SEED));}else recs=JSON.parse(JSON.stringify(SEED));}catch(e){recs=JSON.parse(JSON.stringify(SEED));}recs.forEach(function(r){if(!r._id)r._id=uid();});}
-function persist(){recs.forEach(function(r){if(!r._id)r._id=uid();});try{localStorage.setItem(LS_KEY,JSON.stringify(recs));}catch(e){}updateCount();}
+function loadState(){recs=[];try{localStorage.removeItem(LS_KEY);}catch(e){}} // ข้อมูลอยู่บนเซิร์ฟเวอร์ — ไม่เก็บสำเนาใน localStorage อีกต่อไป (ความปลอดภัย)
+function persist(){recs.forEach(function(r){if(!r._id)r._id=uid();if(!r._createdBy&&currentUser)r._createdBy=currentUser.username;});updateCount();scheduleSync();}
 function updateCount(){document.getElementById('recCount').textContent=recs.length;}
 
 let charts={};let selPv=null,selGrp=null,selSub='';let provSubView='p';
@@ -561,7 +622,7 @@ function subLabel(r){let s=r.sub||'';if(s==='อื่นๆ'&&r.subOther)s='อ
 function socStr(s){if(!s)return '';const a=SOCIALS.filter(([k])=>s[k]).map(([k,l])=>l+': '+s[k]);if(s.otherName||s.otherUrl)a.push((s.otherName||'อื่นๆ')+': '+(s.otherUrl||''));return a.join(' | ');}
 
 async function loadAddr(){
-  try{const res=await fetch('https://cdn.jsdelivr.net/gh/kongvut/thai-province-data@master/api_province_with_amphure_tambon.json');if(!res.ok)throw new Error('http');ADDR_DATA=await res.json();ADDR_DATA.sort((a,b)=>a.name_th.localeCompare(b.name_th,'th'));ADDR_PREFIX.forEach(p=>fillProv(p));document.getElementById('addrNote').innerHTML='<i class="ti ti-circle-check"></i> ทุกที่อยู่: เลือกจังหวัด → อำเภอ → ตำบล แล้วระบบเติมรหัสไปรษณีย์ให้อัตโนมัติ';}
+  try{const res=await fetch('assets/thai_provinces.json');if(!res.ok)throw new Error('http');ADDR_DATA=await res.json();ADDR_DATA.sort((a,b)=>a.name_th.localeCompare(b.name_th,'th'));ADDR_PREFIX.forEach(p=>fillProv(p));document.getElementById('addrNote').innerHTML='<i class="ti ti-circle-check"></i> ทุกที่อยู่: เลือกจังหวัด → อำเภอ → ตำบล แล้วระบบเติมรหัสไปรษณีย์ให้อัตโนมัติ';}
   catch(e){addrUseText=true;ADDR_PREFIX.forEach(p=>document.getElementById('addr_'+p).innerHTML=buildAddr(p));document.getElementById('addrNote').innerHTML='<i class="ti ti-alert-triangle"></i> โหลดฐานข้อมูลที่อยู่อัตโนมัติไม่ได้ — กรอกจังหวัด/อำเภอ/ตำบลด้วยตนเอง';}
 }
 function initUI(){
@@ -579,8 +640,7 @@ function initUI(){
   let dY='<option value="">ปี พ.ศ.</option>';for(let y=CUR_BE;y>=CUR_BE-100;y--)dY+=`<option>${y}</option>`;document.getElementById('dob_y').innerHTML=dY;
   document.getElementById('socialBox').innerHTML=buildSocial();
   ADDR_PREFIX.forEach(p=>document.getElementById('addr_'+p).innerHTML=buildAddr(p));
-  const savedUrl=localStorage.getItem(LS_URL);if(savedUrl)document.getElementById('gsUrl').value=savedUrl;
-  const savedTok=localStorage.getItem(LS_TOKEN);if(savedTok)document.getElementById('gsToken').value=savedTok;
+  document.getElementById('regProv').innerHTML='<option value="">— เลือกจังหวัด —</option>'+P17.map(p=>`<option>${p}</option>`).join('');
   loadAddr();
 }
 function onDob(){const y=document.getElementById('dob_y').value;if(y)document.getElementById('ag').value=CUR_BE-parseInt(y);}
@@ -610,33 +670,55 @@ function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.create
 function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;}
 function exportCSV(){const rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}const cols=Object.keys(rows[0]);const esc=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\r\n');dl(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),'person_data_'+stamp()+'.csv');gToast('ส่งออก CSV แล้ว ('+rows.length+' รายการ)');}
 function exportXLSX(){const rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}try{const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ข้อมูลบุคคล');XLSX.writeFile(wb,'person_data_'+stamp()+'.xlsx');gToast('ส่งออก Excel แล้ว ('+rows.length+' รายการ)');}catch(e){gToast('ส่งออกไม่สำเร็จ');}}
-// ===== CHUEY-Server sync =====
-// base ว่าง ('') = เรียกเซิร์ฟเวอร์เดียวกับที่เสิร์ฟหน้านี้ / null = ยังไม่ได้ตั้งค่า (เปิดจาก file:// และไม่ได้กรอก URL)
-function apiBase(){var el=document.getElementById('gsUrl');var v=(el?el.value.trim():'')||localStorage.getItem(LS_URL)||'';if(v)return v.replace(/\/+$/,'');if(location.protocol==='http:'||location.protocol==='https:')return '';return null;}
-function apiToken(){var el=document.getElementById('gsToken');return (el?el.value.trim():'')||localStorage.getItem(LS_TOKEN)||'';}
-function apiHeaders(withJson){var h={};if(withJson!==false)h['Content-Type']='application/json;charset=utf-8';var t=apiToken();if(t)h['x-api-token']=t;return h;}
-function saveServerCfg(){var el=document.getElementById('gsUrl');var tk=document.getElementById('gsToken');try{if(el)localStorage.setItem(LS_URL,el.value.trim());if(tk)localStorage.setItem(LS_TOKEN,tk.value.trim());}catch(e){}}
-async function syncServer(){
-  const st=document.getElementById('gsStatus');const base=apiBase();
-  if(base===null){document.getElementById('gsbody').classList.add('show');st.innerHTML='<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> กรุณาใส่ Server URL ก่อน (หรือเปิดหน้านี้ผ่าน CHUEY-Server โดยตรง)';gToast('ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์');return;}
-  saveServerCfg();
-  if(!recs.length){gToast('ไม่มีข้อมูลให้ส่ง');return;}
-  st.innerHTML='<i class="ti ti-loader"></i> กำลังส่ง...';
+// ===== CHUEY-Server: ระบบผู้ใช้ + sync =====
+let currentUser=null;
+function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
+function apiBase(){return (location.protocol==='http:'||location.protocol==='https:')?'':null;} // เรียกเซิร์ฟเวอร์เดียวกับที่เสิร์ฟหน้านี้เสมอ
+function apiHeaders(withJson){var h={};if(withJson!==false)h['Content-Type']='application/json;charset=utf-8';return h;}
+async function api(pathname,opts){var base=apiBase();if(base===null)throw new Error('ต้องเปิดหน้านี้ผ่าน CHUEY-Server เช่น http://ไอพีเซิร์ฟเวอร์:8080/');var res=await fetch(base+pathname,opts||{});var j=null;try{j=await res.json();}catch(e){}if(res.status===401){showAuth();throw new Error((j&&j.error)||'ยังไม่ได้เข้าสู่ระบบ');}if(!j||j.ok!==true)throw new Error((j&&j.error)||('HTTP '+res.status));return j;}
+function showAuth(){currentUser=null;setUserUI();document.getElementById('authOverlay').classList.add('show');}
+function hideAuth(){document.getElementById('authOverlay').classList.remove('show');}
+function authMode(m){document.getElementById('authLogin').style.display=(m==='login')?'block':'none';document.getElementById('authReg').style.display=(m==='reg')?'block':'none';}
+function setUserUI(){var cu=document.getElementById('curUser');var lo=document.getElementById('btnLogout');var ta=document.getElementById('tbAdmin');if(currentUser){cu.textContent=(currentUser.name||currentUser.username)+(isAdmin()?' (admin)':'');lo.style.display='';ta.style.display=isAdmin()?'':'none';}else{cu.textContent='ยังไม่เข้าสู่ระบบ';lo.style.display='none';ta.style.display='none';}}
+async function checkAuth(){if(apiBase()===null){showAuth();document.getElementById('loginErr').textContent='ต้องเปิดหน้านี้ผ่านเซิร์ฟเวอร์ เช่น http://ไอพีเซิร์ฟเวอร์:8080/ (เปิดไฟล์ตรง ๆ ใช้ไม่ได้)';return;}try{var j=await api('/api/me',{headers:apiHeaders(false)});currentUser=j.user;setUserUI();hideAuth();pullFromServer(true);}catch(e){showAuth();}}
+async function doLogin(){var err=document.getElementById('loginErr');err.classList.remove('auth-ok');err.textContent='';try{var j=await api('/api/login',{method:'POST',headers:apiHeaders(),body:JSON.stringify({username:gv('loginUser'),password:document.getElementById('loginPass').value})});currentUser=j.user;setUserUI();hideAuth();document.getElementById('loginPass').value='';gToast('เข้าสู่ระบบแล้ว — '+(currentUser.name||currentUser.username));pullFromServer(true);}catch(e){err.textContent=e.message;}}
+async function doRegister(){var err=document.getElementById('regErr');err.classList.remove('auth-ok');err.textContent='';var p1=document.getElementById('regPass').value,p2=document.getElementById('regPass2').value;if(p1!==p2){err.textContent='รหัสผ่านทั้งสองช่องไม่ตรงกัน';return;}try{var j=await api('/api/register',{method:'POST',headers:apiHeaders(),body:JSON.stringify({username:gv('regUser'),password:p1,name:gv('regName'),prov:document.getElementById('regProv').value})});err.classList.add('auth-ok');err.textContent=j.message||'สมัครแล้ว — รอ admin อนุมัติ';}catch(e){err.textContent=e.message;}}
+async function doLogout(){try{await api('/api/logout',{method:'POST',headers:apiHeaders()});}catch(e){}recs=[];updateCount();updDash();rList();rProv();sw('form');authMode('login');gToast('ออกจากระบบแล้ว');showAuth();}
+var _autoSyncT=null;
+function scheduleSync(){if(_autoSyncT)clearTimeout(_autoSyncT);_autoSyncT=setTimeout(function(){syncServer(true);},900);} // บันทึกแล้วซิงก์ขึ้นเซิร์ฟเวอร์อัตโนมัติ
+async function syncServer(silent){
+  const st=document.getElementById('gsStatus');
+  if(!recs.length){if(!silent)gToast('ไม่มีข้อมูลให้ส่ง');return;}
+  if(st&&!silent)st.innerHTML='<i class="ti ti-loader"></i> กำลังส่ง...';
   try{
-    const res=await fetch(base+'/api/records',{method:'POST',headers:apiHeaders(),body:JSON.stringify({records:recs})});
-    const j=await res.json();
-    if(!j||j.ok!==true)throw new Error((j&&j.error)||('HTTP '+res.status));
-    st.innerHTML='<i class="ti ti-circle-check" style="color:#1D9E75;"></i> สำเร็จ — เพิ่ม '+(j.added||0)+' / อัปเดต '+(j.updated||0)+' รายการ (รวมบนเซิร์ฟเวอร์ '+(j.total!=null?j.total:'-')+')';
-    gToast('ส่งข้อมูลขึ้น CHUEY-Server แล้ว');
-  }catch(e){
-    st.innerHTML='<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ส่งไม่สำเร็จ: '+e+' — ตรวจว่า server.js ทำงานอยู่ และ URL/token ถูกต้อง';gToast('ส่งไม่สำเร็จ');
-  }
+    const j=await api('/api/records',{method:'POST',headers:apiHeaders(),body:JSON.stringify({records:recs})});
+    if(st)st.innerHTML='<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ซิงก์แล้ว — เพิ่ม '+(j.added||0)+' / แก้ไข '+(j.updated||0)+(j.skipped?(' / ข้าม '+j.skipped):'')+' · รวมบนเซิร์ฟเวอร์ '+(j.total!=null?j.total:'-')+' รายการ';
+    if(!silent)gToast('ส่งข้อมูลขึ้น CHUEY-Server แล้ว');
+    if(j.skipped)gToast('การแก้ไขข้อมูลเดิม '+j.skipped+' รายการถูกข้าม — admin เท่านั้นที่แก้ไขได้');
+  }catch(e){if(st)st.innerHTML='<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ส่งไม่สำเร็จ: '+e.message;if(!silent)gToast('ส่งไม่สำเร็จ: '+e.message);}
 }
-function serverDelete(payload){var base=apiBase();if(base===null)return;fetch(base+'/api/records/delete',{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload)}).catch(function(){});}
-function clearAll(){if(!confirm('ต้องการลบข้อมูลทั้งหมดในเครื่องนี้? (ควร Export เก็บไฟล์สำรองก่อน)'))return;var alsoSrv=confirm('ลบข้อมูลบน CHUEY-Server ด้วยหรือไม่?\nOK = ลบบนเซิร์ฟเวอร์ด้วย / Cancel = ลบเฉพาะในเครื่องนี้');recs=[];persist();rList();if(alsoSrv)serverDelete({all:true});gToast('ลบข้อมูลทั้งหมดแล้ว'+(alsoSrv?' (รวมบนเซิร์ฟเวอร์)':''));}
-function delRec(i){if(!confirm('ลบรายการนี้? (ลบทั้งในเครื่องและบน CHUEY-Server)'))return;var id=recs[i]&&recs[i]._id;recs.splice(i,1);persist();rList();if(id)serverDelete({ids:[id]});}
-function sw(t){document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['form','dash','list','prov'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='dash'){updDash();pullFromServer(true);}if(t==='list')rList();if(t==='prov')rProv();}
-function mkC(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function serverDelete(payload){api('/api/records/delete',{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload)}).catch(function(e){gToast('ลบบนเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message);pullFromServer(true);});}
+function clearAll(){if(!isAdmin()){gToast('admin เท่านั้นที่ลบข้อมูลได้');return;}if(!confirm('ต้องการลบข้อมูลทั้งหมดออกจากระบบ (รวมบนเซิร์ฟเวอร์)? ควร Export เก็บไฟล์สำรองก่อน'))return;recs=[];persist();rList();serverDelete({all:true});gToast('ลบข้อมูลทั้งหมดแล้ว');}
+function delRec(i){if(!isAdmin()){gToast('admin เท่านั้นที่ลบข้อมูลได้');return;}if(!confirm('ลบรายการนี้ออกจากระบบ?'))return;var id=recs[i]&&recs[i]._id;recs.splice(i,1);persist();rList();updDash();closeDtl();if(id)serverDelete({ids:[id]});}
+// ----- แผงจัดการระบบ (admin) -----
+function escH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmtTime(t){if(!t)return '-';var d=new Date(t);if(isNaN(d.getTime()))return escH(t);var p=function(n){return String(n).padStart(2,'0');};return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+(d.getFullYear()+543)+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+async function renderAdmin(){if(!isAdmin())return;
+  try{
+    var uj=await api('/api/users',{headers:apiHeaders(false)});
+    var pend=uj.users.filter(function(u){return u.status!=='approved';});
+    document.getElementById('admPendCnt').textContent=pend.length;
+    document.getElementById('admPendTb').innerHTML=pend.length?pend.map(function(u){return '<tr><td>'+escH(u.username)+'</td><td>'+escH(u.name)+'</td><td>'+escH(u.prov||'-')+'</td><td>'+fmtTime(u.createdAt)+'</td><td><button class="adm-act adm-ap" onclick="admApprove(\''+u.id+'\',\'officer\')">อนุมัติ (เจ้าหน้าที่)</button><button class="adm-act adm-ap" style="background:#7F77DD;" onclick="admApprove(\''+u.id+'\',\'admin\')">อนุมัติเป็น admin</button><button class="adm-act adm-rj" onclick="admReject(\''+u.id+'\')">ปฏิเสธ</button></td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ไม่มีผู้ใช้รออนุมัติ</td></tr>';
+    document.getElementById('admUserTb').innerHTML=uj.users.map(function(u){return '<tr><td>'+escH(u.username)+'</td><td>'+escH(u.name)+'</td><td>'+escH(u.prov||'-')+'</td><td>'+(u.role==='admin'?'<span class="bge-adm">admin</span>':'เจ้าหน้าที่')+'</td><td>'+(u.status==='approved'?'<span class="bge-appr">อนุมัติแล้ว</span>':'<span class="bge-pend">รออนุมัติ</span>')+'</td><td>'+(currentUser&&u.username===currentUser.username?'-':'<button class="adm-act adm-rj" onclick="admReject(\''+u.id+'\')">ลบบัญชี</button>')+'</td></tr>';}).join('');
+    var aj=await api('/api/audit?limit=300',{headers:apiHeaders(false)});
+    var AN={login:'เข้าสู่ระบบ',logout:'ออกจากระบบ',login_failed:'เข้าระบบไม่สำเร็จ',login_denied:'ถูกปฏิเสธ (ยังไม่อนุมัติ)',register:'สมัครสมาชิก',approve_user:'อนุมัติผู้ใช้',reject_user:'ลบ/ปฏิเสธผู้ใช้',save_records:'บันทึกข้อมูล',delete_records:'ลบข้อมูล'};
+    document.getElementById('admAuditTb').innerHTML=aj.entries.length?aj.entries.map(function(a){return '<tr><td style="white-space:nowrap;">'+fmtTime(a.time)+'</td><td>'+escH(a.user)+'</td><td style="white-space:nowrap;">'+(AN[a.action]||escH(a.action))+'</td><td>'+escH(a.detail||'')+'</td><td>'+escH(a.ip||'')+'</td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ยังไม่มีบันทึก</td></tr>';
+  }catch(e){gToast('โหลดข้อมูลจัดการระบบไม่สำเร็จ: '+e.message);}
+}
+async function admApprove(id,role){try{await api('/api/users/approve',{method:'POST',headers:apiHeaders(),body:JSON.stringify({id:id,role:role})});gToast('อนุมัติแล้ว');renderAdmin();}catch(e){gToast(e.message);}}
+async function admReject(id){if(!confirm('ลบ/ปฏิเสธบัญชีนี้?'))return;try{await api('/api/users/reject',{method:'POST',headers:apiHeaders(),body:JSON.stringify({id:id})});gToast('ลบบัญชีแล้ว');renderAdmin();}catch(e){gToast(e.message);}}
+function sw(t){document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['form','dash','list','prov','admin'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='dash'){updDash();pullFromServer(true);}if(t==='list')rList();if(t==='prov')rProv();if(t==='admin')renderAdmin();}
+function mkC(id,cfg){if(typeof Chart==='undefined')return;if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 function updDash(){
   const fp=document.getElementById('dfltP').value,fg=document.getElementById('dfltG').value;
   const data=recs.filter(r=>(!fp||r.pv===fp)&&(!fg||r.grp==fg));
@@ -662,7 +744,7 @@ function maskNid(n){if(!n)return '-';return n.length===13?(n.slice(0,1)+'-'+n.sl
 function rList(){const q=document.getElementById('srch').value.trim(),fp=document.getElementById('lfltP').value,fg=document.getElementById('lfltG').value;const rows=recs.filter(r=>(!q||(r.fn+r.ln).includes(q))&&(!fp||r.pv===fp)&&(!fg||r.grp==fg));document.getElementById('lcnt').textContent=rows.length;document.getElementById('ltb').innerHTML=rows.length?rows.map(r=>{const idx=recs.indexOf(r);const sl=subLabel(r);return `<tr><td><div class="nc"><div class="av ${AVC[idx%AVC.length]}">${r.fn[0]}${r.ln[0]||''}</div>${r.fn} ${r.ln}</div></td><td>${r.ag||'-'}</td><td><span class="bge ${r.gd==='ชาย'?'bm':'bf'}">${r.gd||'-'}</span></td><td>${r.pv||'-'}</td><td><span class="gnum" title="${gName(r.grp)}${sl?' · '+sl:''}">${r.grp}${r.sub?'·'+r.sub:''}</span></td><td style="font-size:12px;">${maskNid(r.nid)}</td><td><span class="link" onclick="showDtl(${idx})">ดู</span></td></tr>`;}).join(''):'<tr><td colspan="7" class="enote">ยังไม่มีข้อมูล — เริ่มเพิ่มที่แท็บ "เพิ่มข้อมูล"</td></tr>';}
 function dItem(k,v){return `<div class="dtl-item"><div class="k">${k}</div><div class="v">${v||'-'}</div></div>`;}
 function dFull(k,v){return `<div class="dtl-item" style="grid-column:1/-1;"><div class="k">${k}</div><div class="v">${v||'-'}</div></div>`;}
-function showDtlWatch(i){const r=recs[i];const childTxt=r.ch==='0'?'ไม่มีบุตร':(r.ch+' คน');const soc=r.social||emptySocial();const socItems=SOCIALS.filter(([k])=>soc[k]).map(([k,l])=>`<div style="margin-bottom:3px;"><b style="font-weight:600;">${l}:</b> ${soc[k]}</div>`);if(soc.otherName||soc.otherUrl)socItems.push(`<div style="margin-bottom:3px;"><b style="font-weight:600;">${soc.otherName||'อื่นๆ'}:</b> ${soc.otherUrl||''}</div>`);const socHtml=socItems.length?socItems.join(''):'-';const sl=subLabel(r);const g1Html=(r.grp===1)?`<div class="dtl-sec">ข้อมูลหมายจับ (ม.110/112/116)</div><div class="dtl-grid">${dItem('หมายจับคดีอาญาที่',r.g1Warrant)}${dItem('ของ สน./สภ.',r.g1Station)}${dItem('ในความผิดฐาน',r.g1Charge)}${dItem('อยู่ในความควบคุมที่',r.g1Custody)}</div>`:'';const g5Html=(r.grp===5)?`<div class="dtl-sec">ข้อมูลหมายจับทั่วไป</div><div class="dtl-grid">${dItem('หมายจับคดีอาญาที่',r.g5Warrant)}${dItem('ของ สน./สภ.',r.g5Station)}${dItem('ในความผิดฐาน',r.g5Charge)}${dItem('สถานะ',[r.g5Flee?'หลบหนี':'',r.g5Arrested?'จับกุมแล้ว':''].filter(Boolean).join(', '))}</div>`:'';const psyHtml=(r.grp===11)?`<div class="dtl-sec">ข้อมูลกลุ่มจิตเวช (สธ)</div><div class="dtl-grid">${dItem('รักษาตัวที่ รพ.',r.psyHosp)}${dItem('ผู้ปกครอง/ผู้ดูแล',r.psyGuard)}${dItem('เบอร์ผู้ดูแล',r.psyGuardPhone)}${dItem('ความเกี่ยวข้อง',r.psyRel)}${dItem('จนท.รับผิดชอบ',r.psyOff)}${dItem('เบอร์ จนท.',r.psyOffPhone)}</div>`:'';const reliefHtml=(r.grp===12)?`<div class="dtl-sec">การยื่นเรื่อง / หน่วยงานรับผิดชอบ</div><div class="dtl-grid">${dFull('ช่องทางการยื่น',(r.reliefChannels||[]).join(', '))}${dItem('หน่วยงานรับผิดชอบ',r.reliefAgency)}${dItem('หน.หน่วย',r.reliefHead)}${dItem('เบอร์ติดต่อ',r.reliefPhone)}${dFull('ขั้นตอนการแก้ไขปัญหา',r.reliefSteps)}</div>`:'';const behArr=[r.beh1,r.beh2,r.beh3].filter(Boolean);const behHtml=behArr.length?`<div class="dtl-sec">พฤติการณ์ความเคลื่อนไหวที่ผ่านมา</div><div class="dtl-grid">${behArr.map((b,i)=>dFull('สถานการณ์ที่ '+(i+1),b)).join('')}</div>`:'';document.getElementById('dtlBox').innerHTML=`<div class="dtl-hd"><div class="h">${r.fn} ${r.ln}</div><button class="dtl-close" onclick="closeDtl()">&times;</button></div>${r.photo?('<div style="text-align:center;margin:2px 0 12px;"><img src="'+r.photo+'" style="max-height:170px;border-radius:10px;"></div>'):''}<div class="dtl-grid">${dItem('เลขบัตรประชาชน',maskNid(r.nid))}${dItem('วันเดือนปีเกิด',fmtDob(r))}${dItem('อายุ',r.ag?r.ag+' ปี':'-')}${dItem('เพศ',r.gd)}${dItem('สถานภาพ',r.ms)}${dItem('จังหวัด',r.pv)}${dFull('กลุ่มบุคคล',r.grp+'. '+gName(r.grp)+(sl?(' · '+sl):''))}${dItem('จำนวนบุตร',childTxt)}${dItem('โทรศัพท์',r.ph)}${dItem('อีเมล',r.em)}</div><div class="dtl-sec">สื่อออนไลน์</div><div class="dtl-grid"><div class="dtl-item" style="grid-column:1/-1;"><div class="v">${socHtml}</div></div></div><div class="dtl-sec">ที่อยู่ตามทะเบียนราษฎร์</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrReg)||'-')}</div><div class="dtl-sec">ที่อยู่ปัจจุบัน</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrCur)||'-')}</div><div class="dtl-sec">ที่อยู่ที่ทำงาน</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrWork)||'-')}</div><div class="dtl-sec">การทำงาน/การศึกษา</div><div class="dtl-grid">${dItem('อาชีพ',r.jo)}${dItem('บริษัท/องค์กร',r.co)}${dItem('การศึกษา',r.ed)}${dItem('สาขา',r.fc)}</div><div class="dtl-sec">บิดา</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.faN||r.faL)?(r.faN+' '+r.faL):'-')}${dItem('อายุ',r.faA?r.faA+' ปี':'-')}${dItem('เบอร์ติดต่อ',r.faPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrFa)||'-')}</div><div class="dtl-sec">มารดา</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.moN||r.moL)?(r.moN+' '+r.moL):'-')}${dItem('อายุ',r.moA?r.moA+' ปี':'-')}${dItem('เบอร์ติดต่อ',r.moPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrMo)||'-')}</div><div class="dtl-sec">ภรรยา / แฟน</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.spN||r.spL)?(r.spN+' '+r.spL):'-')}${dItem('อายุ',r.spA?r.spA+' ปี':'-')}${dItem('สถานะ',r.spSt)}${dItem('เบอร์ติดต่อ',r.spPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrSp)||'-')}</div>${g1Html}${g5Html}${psyHtml}${reliefHtml}${behHtml}${v1Dtl(r.cars,'รถยนต์')}${v1Dtl(r.motos,'รถจักรยานยนต์')}`;document.getElementById('dtlModal').classList.add('show');}
+function showDtlWatch(i){const r=recs[i];const childTxt=r.ch==='0'?'ไม่มีบุตร':(r.ch+' คน');const soc=r.social||emptySocial();const socItems=SOCIALS.filter(([k])=>soc[k]).map(([k,l])=>`<div style="margin-bottom:3px;"><b style="font-weight:600;">${l}:</b> ${soc[k]}</div>`);if(soc.otherName||soc.otherUrl)socItems.push(`<div style="margin-bottom:3px;"><b style="font-weight:600;">${soc.otherName||'อื่นๆ'}:</b> ${soc.otherUrl||''}</div>`);const socHtml=socItems.length?socItems.join(''):'-';const sl=subLabel(r);const g1Html=(r.grp===1)?`<div class="dtl-sec">ข้อมูลหมายจับ (ม.110/112/116)</div><div class="dtl-grid">${dItem('หมายจับคดีอาญาที่',r.g1Warrant)}${dItem('ของ สน./สภ.',r.g1Station)}${dItem('ในความผิดฐาน',r.g1Charge)}${dItem('อยู่ในความควบคุมที่',r.g1Custody)}</div>`:'';const g5Html=(r.grp===5)?`<div class="dtl-sec">ข้อมูลหมายจับทั่วไป</div><div class="dtl-grid">${dItem('หมายจับคดีอาญาที่',r.g5Warrant)}${dItem('ของ สน./สภ.',r.g5Station)}${dItem('ในความผิดฐาน',r.g5Charge)}${dItem('สถานะ',[r.g5Flee?'หลบหนี':'',r.g5Arrested?'จับกุมแล้ว':''].filter(Boolean).join(', '))}</div>`:'';const psyHtml=(r.grp===11)?`<div class="dtl-sec">ข้อมูลกลุ่มจิตเวช (สธ)</div><div class="dtl-grid">${dItem('รักษาตัวที่ รพ.',r.psyHosp)}${dItem('ผู้ปกครอง/ผู้ดูแล',r.psyGuard)}${dItem('เบอร์ผู้ดูแล',r.psyGuardPhone)}${dItem('ความเกี่ยวข้อง',r.psyRel)}${dItem('จนท.รับผิดชอบ',r.psyOff)}${dItem('เบอร์ จนท.',r.psyOffPhone)}</div>`:'';const reliefHtml=(r.grp===12)?`<div class="dtl-sec">การยื่นเรื่อง / หน่วยงานรับผิดชอบ</div><div class="dtl-grid">${dFull('ช่องทางการยื่น',(r.reliefChannels||[]).join(', '))}${dItem('หน่วยงานรับผิดชอบ',r.reliefAgency)}${dItem('หน.หน่วย',r.reliefHead)}${dItem('เบอร์ติดต่อ',r.reliefPhone)}${dFull('ขั้นตอนการแก้ไขปัญหา',r.reliefSteps)}</div>`:'';const behArr=[r.beh1,r.beh2,r.beh3].filter(Boolean);const behHtml=behArr.length?`<div class="dtl-sec">พฤติการณ์ความเคลื่อนไหวที่ผ่านมา</div><div class="dtl-grid">${behArr.map((b,i)=>dFull('สถานการณ์ที่ '+(i+1),b)).join('')}</div>`:'';document.getElementById('dtlBox').innerHTML=`<div class="dtl-hd"><div class="h">${r.fn} ${r.ln}</div><button class="dtl-close" onclick="closeDtl()">&times;</button></div>${r.photo?('<div style="text-align:center;margin:2px 0 12px;"><img src="'+r.photo+'" style="max-height:170px;border-radius:10px;"></div>'):''}<div class="dtl-grid">${dItem('เลขบัตรประชาชน',maskNid(r.nid))}${dItem('วันเดือนปีเกิด',fmtDob(r))}${dItem('อายุ',r.ag?r.ag+' ปี':'-')}${dItem('เพศ',r.gd)}${dItem('สถานภาพ',r.ms)}${dItem('จังหวัด',r.pv)}${dFull('กลุ่มบุคคล',r.grp+'. '+gName(r.grp)+(sl?(' · '+sl):''))}${dItem('จำนวนบุตร',childTxt)}${dItem('โทรศัพท์',r.ph)}${dItem('อีเมล',r.em)}</div><div class="dtl-sec">สื่อออนไลน์</div><div class="dtl-grid"><div class="dtl-item" style="grid-column:1/-1;"><div class="v">${socHtml}</div></div></div><div class="dtl-sec">ที่อยู่ตามทะเบียนราษฎร์</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrReg)||'-')}</div><div class="dtl-sec">ที่อยู่ปัจจุบัน</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrCur)||'-')}</div><div class="dtl-sec">ที่อยู่ที่ทำงาน</div><div class="dtl-grid">${dFull('',fmtAddr(r.addrWork)||'-')}</div><div class="dtl-sec">การทำงาน/การศึกษา</div><div class="dtl-grid">${dItem('อาชีพ',r.jo)}${dItem('บริษัท/องค์กร',r.co)}${dItem('การศึกษา',r.ed)}${dItem('สาขา',r.fc)}</div><div class="dtl-sec">บิดา</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.faN||r.faL)?(r.faN+' '+r.faL):'-')}${dItem('อายุ',r.faA?r.faA+' ปี':'-')}${dItem('เบอร์ติดต่อ',r.faPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrFa)||'-')}</div><div class="dtl-sec">มารดา</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.moN||r.moL)?(r.moN+' '+r.moL):'-')}${dItem('อายุ',r.moA?r.moA+' ปี':'-')}${dItem('เบอร์ติดต่อ',r.moPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrMo)||'-')}</div><div class="dtl-sec">ภรรยา / แฟน</div><div class="dtl-grid">${dItem('ชื่อ-นามสกุล',(r.spN||r.spL)?(r.spN+' '+r.spL):'-')}${dItem('อายุ',r.spA?r.spA+' ปี':'-')}${dItem('สถานะ',r.spSt)}${dItem('เบอร์ติดต่อ',r.spPhone)}${dFull('ที่อยู่ปัจจุบัน',fmtAddr(r.addrSp)||'-')}</div>${g1Html}${g5Html}${psyHtml}${reliefHtml}${behHtml}${v1Dtl(r.cars,'รถยนต์')}${v1Dtl(r.motos,'รถจักรยานยนต์')}`;document.getElementById('dtlModal').classList.add('show');addDtlAdminBar(i);}
 function closeDtl(){document.getElementById('dtlModal').classList.remove('show');}
 function swSub(v){provSubView=v;document.querySelectorAll('.subtab').forEach((b,i)=>b.classList.toggle('on',['p','g'][i]===v));rProv();}
 function rProv(){const total=recs.length||1,el=document.getElementById('provlist');if(provSubView==='p'){document.getElementById('provTitle').textContent='จำนวนคนแยกจังหวัด (17 จังหวัด)';const c={};P17.forEach(p=>c[p]=0);recs.forEach(r=>{if(r.pv&&c[r.pv]!==undefined)c[r.pv]++;});const max=Math.max(...P17.map(p=>c[p]),1);el.innerHTML=P17.map(p=>{const v=c[p],pct=Math.round(v/total*100);return `<div class="prow"><span class="pname">${p}</span><div class="pbw"><div class="pbf" style="width:${Math.round(v/max*100)}%;"></div></div><span class="pnum">${v}</span><span class="ppct">${pct}%</span></div>`;}).join('');}else{document.getElementById('provTitle').textContent='จำนวนคนแยกกลุ่มบุคคล (15 กลุ่ม)';const c={};GRPS.forEach(g=>c[g.id]=0);recs.forEach(r=>{if(r.grp&&c[r.grp]!==undefined)c[r.grp]++;});const max=Math.max(...GRPS.map(g=>c[g.id]),1);el.innerHTML=GRPS.map(g=>{const v=c[g.id],pct=Math.round(v/total*100);return `<div class="prow"><span class="pname" title="${g.name}">${g.id}. ${g.name}</span><div class="pbw"><div class="pbf purple" style="width:${Math.round(v/max*100)}%;"></div></div><span class="pnum">${v}</span><span class="ppct">${pct}%</span></div>`;}).join('');}}
@@ -715,7 +797,8 @@ function showDtl(i){var r=recs[i];var rt=r.rtype||'watch';if(rt==='watch'){showD
  else if(rt==='place'){html+='<div class="dtl-sec">ที่อยู่สถานที่</div><div class="dtl-grid">'+dFull('',fmtAddr(r.addrMain)||'-')+'</div>';html+='<div class="dtl-sec">ผู้ดูแล</div><div class="dtl-grid">'+dItem('ชื่อผู้ดูแล',r.pl_keeperName)+dItem('เบอร์ติดต่อ',r.pl_keeperPhone)+(r.keeperPhoto?dFull('รูปผู้ดูแล','<img src="'+r.keeperPhoto+'" style="max-height:120px;border-radius:8px;">'):'')+'</div>';html+=v1Dtl(r.keeperCars,'รถยนต์ผู้ดูแล')+v1Dtl(r.keeperMotos,'จยย.ผู้ดูแล');html+='<div class="dtl-sec">หน่วยงานรักษาความปลอดภัย</div><div class="dtl-grid">'+dItem('หน่วยงาน',r.pl_secAgency)+dItem('หน.ที่ดูแล',r.pl_secHead)+dItem('เบอร์ หน.',r.pl_secPhone)+(r.headPhoto?dFull('รูป หน.','<img src="'+r.headPhoto+'" style="max-height:120px;border-radius:8px;">'):'')+dFull('ที่อยู่หน่วยงาน',fmtAddr(r.addrSec)||'-')+'</div>';html+=v1Dtl(r.headCars,'รถยนต์ หน.')+v1Dtl(r.headMotos,'จยย. หน.');html+='<div class="dtl-sec">งานประจำปี / กิจกรรม</div><div class="dtl-grid">'+dItem('ชื่องาน',r.pl_eventName)+dItem('วันที่/เดือน',r.pl_eventDate)+dItem('ผู้ร่วมงานประมาณ',r.pl_eventAttendees)+'</div>';}
  else if(rt==='case'){html+='<div class="dtl-sec">รายละเอียดคดี</div><div class="dtl-grid">'+dItem('เรื่อง',r.case_subject)+dItem('วันเกิดเหตุ',r.case_date)+dItem('เวลา',r.case_time)+dFull('สถานที่เกิดเหตุ',fmtAddr(r.addrLoc)||'-')+'</div>';var sus=r.suspects||[];html+='<div class="dtl-sec">ผู้ต้องหา ('+sus.length+')</div><div class="dtl-grid">'+(sus.length?sus.map(function(s,k){return dFull('คนที่ '+(k+1),(s.photo?'<img src="'+s.photo+'" style="height:54px;border-radius:6px;vertical-align:middle;margin-right:8px;">':'')+personLine(s));}).join(''):dFull('','-'))+'</div>';var dec=r.deceased||[];html+='<div class="dtl-sec">ผู้เสียชีวิต ('+dec.length+')</div><div class="dtl-grid">'+(dec.length?dec.map(function(s,k){return dFull('คนที่ '+(k+1),(s.photo?'<img src="'+s.photo+'" style="height:54px;border-radius:6px;vertical-align:middle;margin-right:8px;">':'')+personLine(s));}).join(''):dFull('','-'))+'</div>';var veh=r.vehicles||[];html+='<div class="dtl-sec">ยานพาหนะ ('+veh.length+')</div><div class="dtl-grid">'+(veh.length?veh.map(function(v,k){return dFull('คันที่ '+(k+1),[v.type,v.holder?('ผู้ครอบครอง: '+v.holder):'',v.owner?('กรรมสิทธิ์: '+v.owner):''].filter(Boolean).join(' · ')||'-');}).join(''):dFull('','-'))+'</div>';var ev=r.evidence||[];html+='<div class="dtl-sec">ตารางของกลาง ('+ev.length+')</div><div class="dtl-grid">'+(ev.length?ev.map(function(e){return dItem(e.type||'-','จำนวน '+(e.qty||'-'));}).join(''):dFull('','-'))+'</div>';html+='<div class="dtl-sec">อาวุธ</div><div class="dtl-grid">'+dItem('อาวุธ',r.case_weapon)+dItem('อาวุธปืน',r.case_gunReg)+dItem('ทะเบียนปืน',r.case_gunNo)+'</div>';html+='<div class="dtl-sec">ผลคดี / พฤติการณ์</div><div class="dtl-grid">'+dItem('ผลคดี',r.case_result)+dFull('พฤติการณ์โดยย่อ',r.case_brief)+'</div>';html+='<div class="dtl-sec">พนักงานสอบสวน</div><div class="dtl-grid">'+dItem('ร้อยเวร',r.case_officer)+dItem('สภ.',r.case_station)+dItem('เบอร์ติดต่อ',r.case_phone)+'</div>';}
  else if(rt==='activity'){html+='<div class="dtl-grid">'+dItem('ชื่อกิจกรรม',r.act_name)+dItem('วันที่/เดือน',r.act_date)+dItem('สถานที่',r.act_place)+dItem('ผู้ร่วมงานประมาณ',r.act_attendees)+'</div><div class="dtl-sec">รายละเอียด</div><div class="dtl-grid">'+dFull('',r.act_detail||'-')+'</div>';}
- document.getElementById('dtlBox').innerHTML=html;document.getElementById('dtlModal').classList.add('show');}
+ document.getElementById('dtlBox').innerHTML=html;document.getElementById('dtlModal').classList.add('show');addDtlAdminBar(i);}
+function addDtlAdminBar(i){if(!isAdmin())return;var box=document.getElementById('dtlBox');var bar=document.createElement('div');bar.style.cssText='margin-top:14px;text-align:right;border-top:1px solid var(--color-border-tertiary);padding-top:10px;';bar.innerHTML='<button class="adm-act adm-rj" onclick="delRec('+i+')"><i class="ti ti-trash"></i> ลบรายการนี้ (admin)</button>';box.appendChild(bar);}
 
 function flatRec(r,i){var rt=r.rtype||'watch';if(rt==='watch')return flatRecWatch(r,i);var b={'ลำดับ':i+1,'ประเภทข้อมูล':rtypeLabel(rt),'จังหวัด':r.pv||'','ชื่อ/หัวข้อ':recTitle(r)};
  if(rt==='vip'){b['รถยนต์']=v1Str(r.cars,'รถยนต์');b['รถจักรยานยนต์']=v1Str(r.motos,'จยย.');b['ประเภทบุคคลสำคัญ']=(r.cats||[]).map(function(x){return x.label+(x.text?(': '+x.text):'');}).join(' | ');b['เลขบัตรประชาชน']=r.nid||'';b['อายุ']=r.ag||'';b['เพศ']=r.gd||'';b['โทรศัพท์']=r.ph||'';b['ที่อยู่ปัจจุบัน']=fmtAddr(r.addrCur);b['การศึกษา']=r.ed||'';b['สถาบัน']=r.inst||'';b['เคยต้องคดี']=r.crim||'';b['สน./สภ.']=r.crimStation||'';b['ข้อหา']=r.crimCharge||'';b['สถานะ']=r.crimStatus||'';b['หมายจับ']=r.crimWarrant||'';}
@@ -743,8 +826,8 @@ function rProv(){var total=recs.length||1,el=document.getElementById('provlist')
 }
 function rList(){var q=gv('srch');var fp=document.getElementById('lfltP').value;var ft=document.getElementById('lfltT')?document.getElementById('lfltT').value:'';var fg=document.getElementById('lfltG').value;var rows=recs.filter(function(r){var rt=r.rtype||'watch';var nm=((r.fn||'')+' '+(r.ln||'')).trim();if(q){return nm.indexOf(q)>=0||recTitle(r).indexOf(q)>=0;}if(ft&&rt!==ft)return false;if(fp&&r.pv!==fp)return false;if(fg&&!(rt==='watch'&&r.grp==fg))return false;return true;});document.getElementById('lcnt').textContent=rows.length;document.getElementById('ltb').innerHTML=rows.length?rows.map(function(r){var idx=recs.indexOf(r);var rt=r.rtype||'watch';return '<tr><td><div class="nc"><div class="av '+AVC[idx%AVC.length]+'"><i class="ti '+rtIcon(rt)+'"></i></div>'+recTitle(r)+'</div></td><td><span class="bge '+rtBge(rt)+'">'+rtypeLabel(rt)+'</span></td><td>'+(r.pv||'-')+'</td><td style="font-size:12px;color:var(--color-text-secondary);">'+recSummary(r)+'</td><td><span class="link" onclick="showDtl('+idx+')">ดู</span></td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ไม่พบข้อมูล</td></tr>';}
 function uid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
-function mergeSheetRecords(sheetRecs){var localById={};recs.forEach(function(r){if(r._id)localById[r._id]=r;});var seen={};var merged=[];sheetRecs.forEach(function(sr){if(!sr||!sr._id)return;var loc=localById[sr._id];if(loc){sr.photo=loc.photo||sr.photo;sr.keeperPhoto=loc.keeperPhoto||sr.keeperPhoto;sr.headPhoto=loc.headPhoto||sr.headPhoto;if(loc.suspects&&sr.suspects)sr.suspects.forEach(function(p,i){if(loc.suspects[i]&&loc.suspects[i].photo)p.photo=loc.suspects[i].photo;});if(loc.deceased&&sr.deceased)sr.deceased.forEach(function(p,i){if(loc.deceased[i]&&loc.deceased[i].photo)p.photo=loc.deceased[i].photo;});}seen[sr._id]=true;merged.push(sr);});recs.forEach(function(r){if(!r._id||!seen[r._id])merged.push(r);});recs=merged;persist();updateCount();updDash();rList();rProv();}
-async function pullFromServer(silent){var base=apiBase();var ds=document.getElementById('dashSync');var st=document.getElementById('gsStatus');function setStatus(html,toast){if(ds)ds.innerHTML=html;if(st&&!silent)st.innerHTML=html;if(toast&&!silent)gToast(toast);}if(base===null){setStatus('<span style="color:#D85A30;">ยังไม่ได้ตั้งค่า Server URL ของ CHUEY-Server (ตั้งค่าที่แท็บรายชื่อ)</span>');return;}saveServerCfg();setStatus('<i class="ti ti-loader"></i> กำลังดึงข้อมูลจาก CHUEY-Server...');var ctl=(typeof AbortController!=='undefined')?new AbortController():null;var tm=ctl?setTimeout(function(){ctl.abort();},15000):null;try{var res=await fetch(base+'/api/records?t='+Date.now(),{headers:apiHeaders(false),signal:ctl?ctl.signal:undefined});var j=await res.json();if(!j||j.ok!==true)throw new Error((j&&j.error)||('HTTP '+res.status));var arr=j.records||[];mergeSheetRecords(arr);setStatus('<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ดึงจาก CHUEY-Server แล้ว '+arr.length+' รายการ','ดึงข้อมูลจากเซิร์ฟเวอร์แล้ว');}catch(e){setStatus('<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ดึงไม่สำเร็จ — ตรวจว่า server.js ทำงานอยู่ และ URL/token ถูกต้อง');}finally{if(tm)clearTimeout(tm);}}
+function mergeSheetRecords(sheetRecs){var localById={};recs.forEach(function(r){if(r._id)localById[r._id]=r;});var seen={};var merged=[];sheetRecs.forEach(function(sr){if(!sr||!sr._id)return;var loc=localById[sr._id];if(loc){sr.photo=loc.photo||sr.photo;sr.keeperPhoto=loc.keeperPhoto||sr.keeperPhoto;sr.headPhoto=loc.headPhoto||sr.headPhoto;if(loc.suspects&&sr.suspects)sr.suspects.forEach(function(p,i){if(loc.suspects[i]&&loc.suspects[i].photo)p.photo=loc.suspects[i].photo;});if(loc.deceased&&sr.deceased)sr.deceased.forEach(function(p,i){if(loc.deceased[i]&&loc.deceased[i].photo)p.photo=loc.deceased[i].photo;});}seen[sr._id]=true;merged.push(sr);});recs.forEach(function(r){if(!r._id||!seen[r._id])merged.push(r);});recs=merged;recs.forEach(function(r){if(!r._id)r._id=uid();});updateCount();updDash();rList();rProv();}
+async function pullFromServer(silent){if(!currentUser)return;var ds=document.getElementById('dashSync');var st=document.getElementById('gsStatus');function setStatus(html,toast){if(ds)ds.innerHTML=html;if(st&&!silent)st.innerHTML=html;if(toast&&!silent)gToast(toast);}setStatus('<i class="ti ti-loader"></i> กำลังดึงข้อมูลจาก CHUEY-Server...');try{var j=await api('/api/records?t='+Date.now(),{headers:apiHeaders(false)});var arr=j.records||[];mergeSheetRecords(arr);setStatus('<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ดึงจาก CHUEY-Server แล้ว '+arr.length+' รายการ','ดึงข้อมูลจากเซิร์ฟเวอร์แล้ว');}catch(e){setStatus('<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ดึงไม่สำเร็จ: '+e.message);}}
 function getVeh(p){return {car:{brand:gv(p+'_car_brand'),color:gv(p+'_car_color'),plate:gv(p+'_car_plate'),prov:gv(p+'_car_prov')},mc:{brand:gv(p+'_mc_brand'),color:gv(p+'_mc_color'),plate:gv(p+'_mc_plate'),prov:gv(p+'_mc_prov')}};}
 function clrVeh(p){['_car_brand','_car_color','_car_plate','_car_prov','_mc_brand','_mc_color','_mc_plate','_mc_prov'].forEach(function(suf){var e=document.getElementById(p+suf);if(e)e.value='';});}
 function vehLine(o){o=o||{};var p=[];if(o.brand)p.push(o.brand);if(o.color)p.push('สี '+o.color);if(o.plate)p.push('ทะเบียน '+o.plate);if(o.prov)p.push('จ.'+o.prov);return p.join(' · ');}
@@ -771,7 +854,7 @@ function v1Str(list,label){return (list||[]).map(function(o){var s=v1Line(o);ret
 
 function renderDashList(data){var wrap=document.getElementById('dashListWrap');var dc=document.getElementById('dashCount');if(dc)dc.textContent=data.length;if(!wrap)return;if(!data.length){wrap.innerHTML='<div class="enote">ไม่มีข้อมูลตามเงื่อนไขที่เลือก</div>';return;}wrap.innerHTML='<div class="tc"><table><thead><tr><th style="width:180px;">ชื่อ / หัวข้อ</th><th style="width:110px;">ประเภท</th><th style="width:96px;">จังหวัด</th><th>รายละเอียด</th><th style="width:46px;"></th></tr></thead><tbody>'+data.map(function(r){var idx=recs.indexOf(r);var rt=r.rtype||'watch';return '<tr><td><div class="nc"><div class="av '+AVC[idx%AVC.length]+'"><i class="ti '+rtIcon(rt)+'"></i></div>'+recTitle(r)+'</div></td><td><span class="bge '+rtBge(rt)+'">'+rtypeLabel(rt)+'</span></td><td>'+(r.pv||'-')+'</td><td style="font-size:12px;color:var(--color-text-secondary);">'+recSummary(r)+'</td><td><span class="link" onclick="showDtl('+idx+')">ดู</span></td></tr>';}).join('')+'</tbody></table></div>';}
 function updDash(){var fp=document.getElementById('dfltP').value;var ft=(document.getElementById('dfltT')||{}).value||'';var q=gv('dsrch');var byProv=recs.filter(function(r){return (!fp||r.pv===fp);});function cnt(t){return byProv.filter(function(r){return (r.rtype||'watch')===t;}).length;}var setTxt=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};setTxt('m_all',byProv.length);setTxt('m_watch',cnt('watch'));setTxt('m_vip',cnt('vip'));setTxt('m_place',cnt('place'));setTxt('m_case',cnt('case'));setTxt('m_act',cnt('activity'));var types=[['watch','บุคคลเฝ้าระวัง','#378ADD'],['vip','บุคคลสำคัญ','#D4537E'],['place','สถานที่สำคัญ','#1D9E75'],['case','คดีสำคัญ','#E08A1E'],['activity','กิจกรรม','#7F77DD']];var tD=types.map(function(t){return cnt(t[0]);}),tC=types.map(function(t){return t[2];}),tL=types.map(function(t){return t[1];});var legt=document.getElementById('leg-t');if(legt)legt.innerHTML=types.map(function(t,i){return '<span><span class="ld" style="background:'+t[2]+';"></span>'+t[1]+' '+tD[i]+'</span>';}).join('');mkC('ctype',{type:'doughnut',data:{labels:tL,datasets:[{data:tD,backgroundColor:tC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});var baseT=byProv.filter(function(r){return (!ft||(r.rtype||'watch')===ft);});var pvC={};P17.forEach(function(p){pvC[p]=0;});baseT.forEach(function(r){if(r.pv&&pvC[r.pv]!==undefined)pvC[r.pv]++;});var pvL=fp?[fp]:P17,pvD=pvL.map(function(p){return pvC[p]||0;});mkC('cp',{type:'bar',data:{labels:pvL,datasets:[{label:'จำนวน',data:pvD,backgroundColor:'#1D9E75',borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(128,128,128,0.1)'},ticks:{stepSize:1,precision:0,font:{size:11},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:11},color:'#888'}}}}});var watchSet=byProv.filter(function(r){return (r.rtype||'watch')==='watch';});var grpC={};GRPS.forEach(function(g){grpC[g.id]=0;});watchSet.forEach(function(r){if(r.grp&&grpC[r.grp]!==undefined)grpC[r.grp]++;});var grpL=GRPS.map(function(g){return g.id+'. '+(g.name.length>26?g.name.slice(0,26)+'…':g.name);}),grpD=GRPS.map(function(g){return grpC[g.id]||0;});mkC('cgrp',{type:'bar',data:{labels:grpL,datasets:[{label:'จำนวนคน',data:grpD,backgroundColor:'#7F77DD',borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(128,128,128,0.1)'},ticks:{stepSize:1,precision:0,font:{size:11},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:11},color:'#888'}}}}});var listData=baseT.filter(function(r){if(!q)return true;var nm=((r.fn||'')+' '+(r.ln||'')).trim();return nm.indexOf(q)>=0||recTitle(r).indexOf(q)>=0;});renderDashList(listData);renderUpcoming();}
-loadState();initUI();initExtra();updateCount();updDash();rList();rProv();setTimeout(function(){if(apiBase()!==null)pullFromServer(true);},400);
+loadState();initUI();initExtra();updateCount();updDash();rList();rProv();authMode('login');checkAuth();
 </script>
 </body>
 </html>

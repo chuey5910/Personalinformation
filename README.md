@@ -1,14 +1,31 @@
-# SB1 Web App — เก็บข้อมูลบน CHUEY-Server
+# SB1 Web App — เก็บข้อมูลบน CHUEY-Server (มีระบบผู้ใช้ + audit log)
 
 ระบบจัดเก็บข้อมูลภาษาไทยของ Special Branch 1 (สบ.1) ครอบคลุม 17 จังหวัดภาคเหนือ
-**เวอร์ชันนี้ย้ายที่เก็บข้อมูลกลางจาก Google Sheets มาอยู่บน CHUEY-Server แล้ว** — ไม่มีการส่ง/ดึงข้อมูลจาก Google Sheets อีกต่อไป
+ข้อมูลกลางเก็บบน **CHUEY-Server** (ไม่ใช้ Google Sheets แล้ว) — เจ้าหน้าที่หลายจังหวัดใช้งานร่วมกันผ่านเบราว์เซอร์ โดยต้อง **ลงทะเบียนและได้รับอนุมัติก่อน** จึงจะเข้าใช้ได้
+
+## กติกาสิทธิ์การใช้งาน
+
+| ผู้ใช้ | อ่านข้อมูล | เพิ่มข้อมูลใหม่ | แก้ไข/ลบข้อมูล | อนุมัติผู้ใช้ / ดู audit log |
+|---|---|---|---|---|
+| ยังไม่ login | ✗ | ✗ | ✗ | ✗ |
+| ลงทะเบียนแล้ว รออนุมัติ | ✗ | ✗ | ✗ | ✗ |
+| เจ้าหน้าที่ (officer) | ✓ | ✓ | ✗ | ✗ |
+| admin | ✓ | ✓ | ✓ | ✓ |
+
+- **ระบบบันทึกการเข้า-ออกทุกครั้ง** (login / logout / login ไม่สำเร็จ / สมัคร / อนุมัติ / บันทึก / ลบ) ลงไฟล์ `data/audit.log` — admin เปิดดูได้ที่แท็บ "จัดการระบบ"
+- ทุกรายการข้อมูลใหม่ถูกประทับชื่อผู้บันทึก (`_createdBy`)
 
 ## ไฟล์ในโปรเจกต์
 
-- `person_dashboard.html` — ตัว web app ทั้งหมด (HTML + CSS + JS ในไฟล์เดียว)
-- `server.js` — backend บน CHUEY-Server (Node.js ล้วน **ไม่ต้อง npm install**) ทำหน้าที่ 2 อย่าง: เสิร์ฟหน้าเว็บ + เก็บข้อมูลกลาง
-- `import_from_sheets.js` — สคริปต์ย้ายข้อมูลเก่าจาก Google Sheets เข้าเซิร์ฟเวอร์ (ใช้ครั้งเดียว)
-- `data/records.json` — ไฟล์ข้อมูลจริง (สร้างอัตโนมัติเมื่อบันทึกครั้งแรก, **ถูก .gitignore ไว้ ห้าม commit**)
+- `person_dashboard.html` — ตัว web app ทั้งหมด (มีหน้า login/ลงทะเบียน + แท็บจัดการระบบสำหรับ admin ในตัว)
+- `server.js` — backend บน CHUEY-Server (Node.js ล้วน **ไม่ต้อง npm install**): เสิร์ฟหน้าเว็บ + API + ระบบผู้ใช้/session + audit log
+- `assets/` — ไลบรารีและฟอนต์ทั้งหมด (Chart.js, SheetJS, Tabler icons, ฟอนต์ Sarabun, ฐานข้อมูลจังหวัด/อำเภอ/ตำบล+รหัสไปรษณีย์ 77 จังหวัด) เสิร์ฟจากเซิร์ฟเวอร์เอง — **ระบบทำงานได้เต็มรูปแบบแม้เครือข่ายภายในไม่มีอินเทอร์เน็ต**
+- `data/` — ข้อมูลจริงทั้งหมด (สร้างอัตโนมัติ, **ถูก .gitignore ไว้ ห้าม commit**)
+  - `records.json` ข้อมูลบุคคล/สถานที่/คดี/กิจกรรม
+  - `users.json` บัญชีผู้ใช้ (รหัสผ่านถูก hash ด้วย scrypt + salt)
+  - `sessions.json` session ที่ login ค้างไว้
+  - `audit.log` บันทึกการใช้งาน (JSON ต่อบรรทัด)
+  - `backup-YYYYMMDD.json` สำรองข้อมูลอัตโนมัติวันละครั้ง
 
 ## วิธีติดตั้งบน CHUEY-Server
 
@@ -16,13 +33,21 @@
 
 ```bash
 git clone <repo> && cd Personalinformation
-node server.js                 # เปิดที่พอร์ต 8080
-# หรือกำหนดเอง:
-PORT=3000 node server.js
-API_TOKEN=รหัสลับ node server.js   # เปิดการยืนยันตัวตนด้วย token (แนะนำ)
+
+# รันครั้งแรก — สร้างบัญชี admin ไปด้วยเลย (สร้างให้เฉพาะตอนที่ยังไม่มีบัญชีชื่อนี้)
+ADMIN_USER=admin ADMIN_PASS=ตั้งรหัสผ่านยาวๆ node server.js
+
+# ครั้งถัดไปรันแค่นี้พอ
+node server.js            # พอร์ตเริ่มต้น 8080 (เปลี่ยนด้วย PORT=3000)
 ```
 
-จากนั้นเปิดเบราว์เซอร์ที่ `http://<ไอพีเซิร์ฟเวอร์>:8080/` — หน้าเว็บและข้อมูลมาจากเซิร์ฟเวอร์เดียวกัน ไม่ต้องตั้งค่าอะไรเพิ่ม
+เปิดเบราว์เซอร์ที่ `http://<ไอพีเซิร์ฟเวอร์>:8080/` → จะพบหน้า **เข้าสู่ระบบ** ก่อนเสมอ
+
+### ขั้นตอนสำหรับเจ้าหน้าที่แต่ละจังหวัด
+1. เปิดหน้าเว็บ → กด **"ลงทะเบียนเจ้าหน้าที่"** → กรอกชื่อ-สกุล, จังหวัด, ชื่อผู้ใช้, รหัสผ่าน
+2. แจ้ง admin ให้เข้าแท็บ **"จัดการระบบ"** → กด **อนุมัติ**
+3. เจ้าหน้าที่ login แล้วใช้งานได้: เพิ่มข้อมูล + ดู Dashboard/รายชื่อ/สรุป ได้ทุกจังหวัด (ข้อมูลซิงก์ขึ้นเซิร์ฟเวอร์อัตโนมัติเมื่อบันทึก รวมรูปภาพ)
+4. การแก้ไข/ลบข้อมูล ทำได้เฉพาะ admin (ปุ่มลบอยู่ท้ายหน้ารายละเอียดของแต่ละรายการ)
 
 ### รันค้างไว้ถาวรด้วย systemd (แนะนำ)
 
@@ -37,7 +62,6 @@ After=network.target
 WorkingDirectory=/path/to/Personalinformation
 ExecStart=/usr/bin/node server.js
 Environment=PORT=8080
-# Environment=API_TOKEN=รหัสลับ
 Restart=always
 User=www-data
 
@@ -50,82 +74,46 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now sb1
 ```
 
-## สถาปัตยกรรมใหม่
+## สถาปัตยกรรม
 
 ```
-[person_dashboard.html] --- fetch GET/POST ---> [server.js บน CHUEY-Server] ---> [data/records.json]
-      (front-end)                                    (API + static)                (แหล่งข้อมูลกลาง)
-   localStorage (สำเนา/แคชในเครื่อง)
+[เบราว์เซอร์เจ้าหน้าที่ 17 จังหวัด] -- login (cookie session) --> [server.js บน CHUEY-Server]
+        person_dashboard.html            fetch GET/POST                 |-- data/records.json
+        (ไม่เก็บข้อมูลใน localStorage)                                  |-- data/users.json
+                                                                        |-- data/audit.log
 ```
 
-- เปิดหน้าเว็บผ่านเซิร์ฟเวอร์ → front-end เรียก API แบบ same-origin อัตโนมัติ (ไม่ต้องกรอก URL)
-- เปิดไฟล์ HTML ตรง ๆ (file://) ก็ยังได้ → กรอก Server URL ที่กล่อง "ตั้งค่าเซิร์ฟเวอร์ (CHUEY-Server)" ในแท็บรายชื่อ
-- **รูปภาพถูก sync ขึ้นเซิร์ฟเวอร์ด้วยแล้ว** (ต่างจากเวอร์ชัน Google Sheets ที่ตัดรูปทิ้งเพราะลิมิตขนาดเซลล์)
-- ดึงข้อมูลจากเซิร์ฟเวอร์อัตโนมัติ: ตอนเปิดหน้า, เปิดแท็บ Dashboard, และตอนค้นหาในแท็บรายชื่อ
-- ลบรายการในหน้าเว็บ = ลบทั้งในเครื่องและบนเซิร์ฟเวอร์
+- เปิดหน้าเว็บผ่านเซิร์ฟเวอร์เท่านั้น (same-origin) — ไม่ต้องตั้งค่า URL ใด ๆ ในหน้าเว็บ
+- บันทึกข้อมูลแล้ว **ซิงก์ขึ้นเซิร์ฟเวอร์อัตโนมัติ** (รวมรูปภาพ) และดึงข้อมูลล่าสุดอัตโนมัติตอนเปิดหน้า/เปิด Dashboard/ค้นหา
+- session หมดอายุเมื่อไม่ใช้งาน 12 ชั่วโมง (ปรับด้วย `SESSION_HOURS=…`)
 
 ## API (server.js)
 
-| Method | Path | ทำอะไร |
-|---|---|---|
-| GET | `/api/health` | ตรวจสถานะ → `{ok:true, count}` |
-| GET | `/api/records` | อ่านทั้งหมด → `{ok:true, records:[...]}` |
-| POST | `/api/records` | body `{records:[...]}` — upsert ตาม `_id` → `{ok, added, updated, total}` |
-| POST | `/api/records/delete` | body `{ids:[...]}` หรือ `{all:true}` → `{ok, deleted, total}` |
+| Method | Path | สิทธิ์ | ทำอะไร |
+|---|---|---|---|
+| GET | `/api/health` | สาธารณะ | ตรวจสถานะ |
+| POST | `/api/register` | สาธารณะ | สมัครบัญชี (สถานะ "รออนุมัติ") |
+| POST | `/api/login` | สาธารณะ | เข้าสู่ระบบ → ได้ cookie session |
+| POST | `/api/logout` | login แล้ว | ออกจากระบบ |
+| GET | `/api/me` | login แล้ว | ข้อมูลผู้ใช้ปัจจุบัน |
+| GET | `/api/records` | login แล้ว | อ่านข้อมูลทั้งหมด |
+| POST | `/api/records` | login แล้ว | `{records:[...]}` — officer: เพิ่มใหม่เท่านั้น (แก้ของเดิมถูกข้าม) / admin: เพิ่ม+แก้ |
+| POST | `/api/records/delete` | **admin** | `{ids:[...]}` หรือ `{all:true}` |
+| GET | `/api/users` | **admin** | รายชื่อผู้ใช้ |
+| POST | `/api/users/approve` | **admin** | `{id, role:'officer'|'admin'}` อนุมัติ |
+| POST | `/api/users/reject` | **admin** | `{id}` ลบ/ปฏิเสธบัญชี |
+| GET | `/api/audit?limit=300` | **admin** | บันทึกการใช้งานล่าสุด |
 
-ถ้าตั้ง `API_TOKEN` ไว้ ทุก request ต้องแนบ header `x-api-token: <token>` (หรือ `?token=` ใน query) — ฝั่งหน้าเว็บมีช่องกรอก token ในกล่องตั้งค่า
+## การสำรองข้อมูล
 
-## การเก็บข้อมูล / สำรองข้อมูล
-
-- ข้อมูลทั้งหมดอยู่ในไฟล์เดียว: `data/records.json` (เขียนแบบ atomic กันไฟล์เสียหาย)
-- เซิร์ฟเวอร์สำรองไฟล์อัตโนมัติวันละ 1 ครั้งเป็น `data/backup-YYYYMMDD.json` ก่อนเขียนทับครั้งแรกของวัน
-- ควรตั้ง cron สำรอง `data/` ออกไปเก็บที่อื่นเพิ่ม เช่น `rsync -a data/ /backup/sb1/`
-- ปุ่ม Export CSV/XLSX ในหน้าเว็บยังใช้ได้ตามเดิม
-
-## ย้ายข้อมูลเก่าจาก Google Sheets (ทำครั้งเดียว)
-
-มี 2 ทางเลือก:
-
-**ทาง 1 — จากเครื่องที่เคยใช้งาน (ง่ายสุด):** ข้อมูลเต็ม (รวมรูป) อยู่ใน localStorage ของเบราว์เซอร์อยู่แล้ว
-เปิดหน้าเว็บเวอร์ชันใหม่บนเครื่องนั้น → แท็บรายชื่อ → กด **"ส่งขึ้น CHUEY-Server"** จบ
-
-**ทาง 2 — ดึงจาก Google Sheets โดยตรง** (ถ้า Apps Script เดิมยังเปิดใช้อยู่):
-
-```bash
-node server.js &   # รันเซิร์ฟเวอร์ปลายทางไว้ก่อน
-node import_from_sheets.js "https://script.google.com/macros/s/xxxx/exec" "http://127.0.0.1:8080"
-```
-
-> หมายเหตุ: ข้อมูลจาก Sheets ไม่มีรูปภาพ (เวอร์ชันเก่าตัดรูปก่อนส่ง) — รูปจะถูกเติมกลับเมื่อเครื่องที่มีรูปใน localStorage กดส่งขึ้นเซิร์ฟเวอร์ (ระบบ merge จะคงรูปในเครื่องไว้)
-> เมื่อย้ายเสร็จแล้ว ควรปิด deployment ของ Apps Script เดิม (Deploy → Manage deployments → Archive) และจำกัดสิทธิ์ชีตเดิม
-
-## โครงสร้างข้อมูล (record object)
-
-ทุก record มี field ระบบ:
-- `_id` — string ไม่ซ้ำ (สร้างด้วย `uid()`) ใช้ dedup + sync
-- `rtype` — ประเภท: `'watch' | 'vip' | 'place' | 'case' | 'activity'` (ค่า default = `'watch'`)
-- `pv` — จังหวัด (1 ใน 17)
-
-### 5 ประเภทข้อมูล
-1. **watch (บุคคลเฝ้าระวัง)** — 15 กลุ่มเฝ้าระวัง (`grp`, `sub`), ข้อมูลส่วนตัว, ที่อยู่ 3 ชุด, สื่อออนไลน์, บุคคลเกี่ยวข้อง, รูปภาพ (`photo`), ยานพาหนะ (`cars[]`, `motos[]`), กล่องเงื่อนไขตามกลุ่ม
-2. **vip (บุคคลสำคัญ/น่าสนใจ)** — ข้อมูลส่วนตัว + `cats[]`, ที่อยู่ 3 ชุด, การศึกษา, บุคคลเกี่ยวข้อง, ประวัติคดีอาญา, รูปภาพ, ยานพาหนะ
-3. **place (สถานที่สำคัญ)** — ชื่อ/ที่อยู่สถานที่, ผู้ดูแล, หน่วยงาน รปภ. + หน., งานประจำปี
-4. **case (คดีสำคัญ)** — เรื่อง, สถานที่/วัน/เวลาเกิดเหตุ, `suspects[]`/`deceased[]`, `vehicles[]`, `evidence[]`, อาวุธ, ผลคดี, พฤติการณ์, พนักงานสอบสวน
-5. **activity (กิจกรรมสำคัญ)** — ชื่อ/วันที่/สถานที่/ผู้ร่วมงาน/รายละเอียด
-
-## ฟังก์ชัน JS สำคัญ (ไว้ค้นในไฟล์)
-
-- state/persist: `loadState()`, `persist()`, `uid()`, `recs[]`, `LS_KEY`, `LS_URL`, `LS_TOKEN`
-- sync กับ CHUEY-Server: `apiBase()`, `apiHeaders()`, `syncServer()` (POST), `pullFromServer()` (GET), `mergeSheetRecords()` (รวมด้วย `_id`, คงรูปในเครื่อง), `serverDelete()`
-- routing: `selProv()`, `chooseRtype()`, `sw()` (สลับแท็บ)
-- save/clear: `saveR/clrF` (watch), `saveVIP`, `savePlace`, `saveCase`, `saveActivity`
-- list/detail/export: `rList()`, `showDtl()`, `flatRec()`, `allFlat()`, `exportCSV/exportXLSX`
-- dashboard: `updDash()`, `renderDashList()`, `renderUpcoming()`
+- เซิร์ฟเวอร์สำรอง `records.json` อัตโนมัติวันละครั้งเป็น `data/backup-YYYYMMDD.json`
+- ควรตั้ง cron สำรองทั้งโฟลเดอร์ `data/` ออกไปเก็บที่อื่น เช่น `rsync -a data/ /backup/sb1/`
+- ปุ่ม Export CSV/XLSX ในหน้าเว็บใช้ได้ตามเดิม (เฉพาะผู้ที่ login แล้ว)
 
 ## ข้อควรระวัง / ความปลอดภัย
 
-- ข้อมูลอ่อนไหวสูง (เลขบัตร ปชช., ที่อยู่, ข้อมูลครอบครัว/การเมือง/จิตเวช/คดี, รูปภาพ) — ต้องทำตาม PDPA
-- **แนะนำให้เปิด `API_TOKEN` เสมอ** ถ้าเซิร์ฟเวอร์เข้าถึงได้จากเครือข่ายที่มีคนอื่นใช้ร่วม
-- จำกัดการเข้าถึงเซิร์ฟเวอร์ให้อยู่ในเครือข่ายภายใน (firewall/VPN) — อย่าเปิดพอร์ตสู่อินเทอร์เน็ตโดยไม่มี HTTPS + auth
-- `data/` ถูก .gitignore ไว้แล้ว — ห้าม commit ไฟล์ข้อมูลจริงขึ้น git
-- แนวทางพัฒนาต่อ: ระบบ login/บทบาทผู้ใช้, HTTPS (reverse proxy ผ่าน nginx + certbot), audit log, เข้ารหัสไฟล์ข้อมูล
+- ข้อมูลอ่อนไหวสูง (เลขบัตร ปชช., ที่อยู่, ข้อมูลครอบครัว/การเมือง/จิตเวช/คดี, รูปภาพ) — ต้องทำตาม PDPA และจำกัดผู้มีสิทธิ์เข้าถึงตามความจำเป็น
+- จำกัดเซิร์ฟเวอร์ให้เข้าถึงได้เฉพาะเครือข่ายภายใน (firewall/VPN) — **อย่าเปิดพอร์ตสู่อินเทอร์เน็ตโดยไม่มี HTTPS**; ถ้าจำเป็นให้ตั้ง reverse proxy (nginx + certbot) ครอบ
+- ตั้งรหัสผ่าน admin ให้ยาวและเดายาก; บัญชีที่ไม่ใช้แล้วให้ admin ลบออก
+- `data/` ถูก .gitignore ไว้แล้ว — ห้าม commit ไฟล์ข้อมูลจริง/ไฟล์ผู้ใช้ขึ้น git
+- แนวทางพัฒนาต่อ: เข้ารหัสไฟล์ข้อมูลที่พัก (at-rest), 2FA, แยกสิทธิ์อ่านตามจังหวัด, หน้ารายงาน audit แบบกรอง/ค้นหา
