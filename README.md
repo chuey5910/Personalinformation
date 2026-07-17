@@ -20,6 +20,7 @@
 - `person_dashboard.html` — ตัว web app ทั้งหมด (มีหน้า login/ลงทะเบียน + แท็บจัดการระบบสำหรับ admin ในตัว)
 - `server.js` — backend บน CHUEY-Server (Node.js ล้วน **ไม่ต้อง npm install**): เสิร์ฟหน้าเว็บ + API + ระบบผู้ใช้/session + audit log
 - `assets/` — ไลบรารีและฟอนต์ทั้งหมด (Chart.js, SheetJS, Tabler icons, ฟอนต์ Sarabun, ฐานข้อมูลจังหวัด/อำเภอ/ตำบล+รหัสไปรษณีย์ 77 จังหวัด) เสิร์ฟจากเซิร์ฟเวอร์เอง — **ระบบทำงานได้เต็มรูปแบบแม้เครือข่ายภายในไม่มีอินเทอร์เน็ต**
+- `setup-macos-service.sh` — สคริปต์ติดตั้งเป็น service บน macOS (รันเบื้องหลัง ปิดหน้าต่าง Terminal ได้)
 - `data/` — ข้อมูลจริงทั้งหมด (สร้างอัตโนมัติ, **ถูก .gitignore ไว้ ห้าม commit**)
   - `records.json` ข้อมูลบุคคล/สถานที่/คดี/กิจกรรม
   - `users.json` บัญชีผู้ใช้ (รหัสผ่านถูก hash ด้วย scrypt + salt)
@@ -49,7 +50,26 @@ node server.js            # พอร์ตเริ่มต้น 8080 (เป
 3. เจ้าหน้าที่ login แล้วใช้งานได้: เพิ่มข้อมูล + ดู Dashboard/รายชื่อ/สรุป ได้ทุกจังหวัด (ข้อมูลซิงก์ขึ้นเซิร์ฟเวอร์อัตโนมัติเมื่อบันทึก รวมรูปภาพ)
 4. การแก้ไข/ลบข้อมูล ทำได้เฉพาะ admin (ปุ่มลบอยู่ท้ายหน้ารายละเอียดของแต่ละรายการ)
 
-### รันค้างไว้ถาวรด้วย systemd (แนะนำ)
+### รันค้างถาวรบน macOS (เช่น Mac mini) — ปิดหน้าต่าง Terminal ได้
+
+ถ้ายังไม่มี Node.js: เปิดเบราว์เซอร์ไป https://nodejs.org → ดาวน์โหลดตัว **LTS (.pkg)** → ดับเบิลคลิกติดตั้ง → ปิด-เปิด Terminal ใหม่ (หรือถ้ามี Homebrew: `brew install node`)
+
+```bash
+# รันครั้งแรกเพื่อสร้าง admin ก่อน (กด Ctrl+C หยุดหลังเห็นข้อความ "สร้างบัญชี admin แล้ว")
+ADMIN_USER=admin ADMIN_PASS=รหัสผ่านของคุณ node server.js
+
+# ติดตั้งเป็น service — รันเบื้องหลัง ปิดหน้าต่างได้ รีสตาร์ทเครื่องแล้วรันเอง
+./setup-macos-service.sh
+
+# คำสั่งอื่น
+./setup-macos-service.sh status      # ดูสถานะ
+./setup-macos-service.sh restart     # รีสตาร์ท
+./setup-macos-service.sh uninstall   # ถอนออก (ข้อมูลไม่ถูกลบ)
+```
+
+> Mac mini ที่ใช้เป็นเซิร์ฟเวอร์ควรเปิด auto-login (System Settings → Users & Groups) และปิดโหมด sleep (Energy Saver) เพื่อให้เครื่องอื่นเข้าถึงได้ตลอด
+
+### รันค้างไว้ถาวรบน Linux ด้วย systemd
 
 สร้าง `/etc/systemd/system/sb1.service`:
 
