@@ -67,6 +67,8 @@ ADMIN_USER=admin ADMIN_PASS=รหัสผ่านของคุณ node serv
 ./setup-macos-service.sh uninstall   # ถอนออก (ข้อมูลไม่ถูกลบ)
 ```
 
+**เปลี่ยนรหัสผ่าน:** ทุกคนเปลี่ยนของตัวเองได้ในหน้าเว็บ (ปุ่ม "เปลี่ยนรหัสผ่าน" มุมขวาบน) — ถ้า **admin ลืมรหัสผ่าน** ให้รีเซ็ตที่เครื่องเซิร์ฟเวอร์: หยุด service ชั่วคราวแล้วรัน `ADMIN_USER=admin ADMIN_PASS=รหัสใหม่ node server.js` หนึ่งครั้ง (ระบบจะรีเซ็ตรหัสให้และบันทึกเหตุการณ์ลง audit log) แล้วติดตั้ง service กลับ
+
 > Mac mini ที่ใช้เป็นเซิร์ฟเวอร์ควรเปิด auto-login (System Settings → Users & Groups) และปิดโหมด sleep (Energy Saver) เพื่อให้เครื่องอื่นเข้าถึงได้ตลอด
 
 ### รันค้างไว้ถาวรบน Linux ด้วย systemd
@@ -116,6 +118,7 @@ sudo systemctl enable --now sb1
 | POST | `/api/login` | สาธารณะ | เข้าสู่ระบบ → ได้ cookie session |
 | POST | `/api/logout` | login แล้ว | ออกจากระบบ |
 | GET | `/api/me` | login แล้ว | ข้อมูลผู้ใช้ปัจจุบัน |
+| POST | `/api/password` | login แล้ว | `{oldPassword,newPassword}` เปลี่ยนรหัสผ่านตัวเอง |
 | GET | `/api/records` | login แล้ว | อ่านข้อมูลทั้งหมด |
 | POST | `/api/records` | login แล้ว | `{records:[...]}` — officer: เพิ่มใหม่เท่านั้น (แก้ของเดิมถูกข้าม) / admin: เพิ่ม+แก้ |
 | POST | `/api/records/delete` | **admin** | `{ids:[...]}` หรือ `{all:true}` |

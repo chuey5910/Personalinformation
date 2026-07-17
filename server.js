@@ -124,12 +124,22 @@ function publicUser(u) {
   return { id: u.id, username: u.username, name: u.name, prov: u.prov, role: u.role, status: u.status, createdAt: u.createdAt };
 }
 
-// สร้าง admin คนแรกจาก environment variable
+// สร้าง admin คนแรกจาก environment variable — ถ้ามีบัญชีนี้อยู่แล้วจะ "รีเซ็ตรหัสผ่าน" ให้แทน
+// (ใช้กู้คืนกรณี admin ลืมรหัสผ่าน: หยุด service แล้วรัน ADMIN_USER=... ADMIN_PASS=รหัสใหม่ node server.js หนึ่งครั้ง)
 if (process.env.ADMIN_USER && process.env.ADMIN_PASS) {
-  if (!findUser(process.env.ADMIN_USER)) {
+  const existing = findUser(process.env.ADMIN_USER);
+  if (!existing) {
     users.push(newUser(process.env.ADMIN_USER, process.env.ADMIN_PASS, 'ผู้ดูแลระบบ', '', 'admin', 'approved'));
     saveUsers();
     console.log('สร้างบัญชี admin แล้ว: ' + process.env.ADMIN_USER);
+  } else {
+    existing.salt = crypto.randomBytes(16).toString('hex');
+    existing.hash = hashPassword(process.env.ADMIN_PASS, existing.salt);
+    existing.role = 'admin';
+    existing.status = 'approved';
+    saveUsers();
+    audit('reset_password', existing.username, 'รีเซ็ตรหัสผ่านผ่าน ADMIN_PASS ที่หน้าเซิร์ฟเวอร์', null);
+    console.log('รีเซ็ตรหัสผ่านของบัญชี ' + existing.username + ' ตามค่า ADMIN_PASS แล้ว');
   }
 }
 
@@ -269,6 +279,25 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/api/me') {
       sendJSON(res, 200, { ok: true, user: publicUser(me) }); return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/password') {
+      const d = JSON.parse(await readBody(req) || '{}');
+      const okOld = crypto.timingSafeEqual(Buffer.from(me.hash, 'hex'), Buffer.from(hashPassword(d.oldPassword || '', me.salt), 'hex'));
+      if (!okOld) {
+        audit('change_password_failed', me.username, 'รหัสผ่านเดิมไม่ถูกต้อง', req);
+        sendJSON(res, 400, { ok: false, error: 'รหัสผ่านเดิมไม่ถูกต้อง' }); return;
+      }
+      const np = String(d.newPassword || '');
+      if (np.length < 6) { sendJSON(res, 400, { ok: false, error: 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร' }); return; }
+      me.salt = crypto.randomBytes(16).toString('hex');
+      me.hash = hashPassword(np, me.salt);
+      saveUsers();
+      // ตัด session อื่น ๆ ของผู้ใช้นี้ทิ้ง (เครื่องอื่นต้อง login ใหม่ด้วยรหัสใหม่) คงไว้เฉพาะเครื่องที่กดเปลี่ยน
+      Object.keys(sessions).forEach((k) => { if (sessions[k].userId === me.id && k !== sess.sid) delete sessions[k]; });
+      saveSessions();
+      audit('change_password', me.username, 'เปลี่ยนรหัสผ่าน', req);
+      sendJSON(res, 200, { ok: true }); return;
     }
 
     if (req.method === 'GET' && url.pathname === '/api/records') {

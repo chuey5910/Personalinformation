@@ -271,7 +271,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
     <div class="brand-ic"><i class="ti ti-database"></i></div>
     <div class="brand-tx"><h1>ระบบเก็บข้อมูลบุคคล</h1><p>17 จังหวัดภาคเหนือ</p></div>
   </div>
-  <div class="appbar-meta usr-chip"><span class="dot-live"></span> <span id="recCount">0</span> รายการ · <i class="ti ti-user-circle"></i><span id="curUser">ยังไม่เข้าสู่ระบบ</span> <button class="usr-out" id="btnLogout" style="display:none;" onclick="doLogout()">ออกจากระบบ</button></div>
+  <div class="appbar-meta usr-chip"><span class="dot-live"></span> <span id="recCount">0</span> รายการ · <i class="ti ti-user-circle"></i><span id="curUser">ยังไม่เข้าสู่ระบบ</span> <button class="usr-out" id="btnPw" style="display:none;" onclick="showPw()">เปลี่ยนรหัสผ่าน</button> <button class="usr-out" id="btnLogout" style="display:none;" onclick="doLogout()">ออกจากระบบ</button></div>
 </div></div>
 
 <div class="wrap">
@@ -565,6 +565,19 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
   </div>
 </div>
 
+<div class="auth-ov" id="pwOverlay" onclick="if(event.target===this)hidePw()">
+  <div class="auth-box">
+    <h2><i class="ti ti-key" style="color:#E08A1E;"></i> เปลี่ยนรหัสผ่าน</h2>
+    <div class="sub">เปลี่ยนรหัสผ่านของบัญชีที่กำลัง login อยู่ — เครื่องอื่นที่ login ค้างไว้จะถูกบังคับให้ login ใหม่</div>
+    <div class="fl"><label>รหัสผ่านเดิม</label><input id="pwOld" type="password" autocomplete="current-password"></div>
+    <div class="fl"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label><input id="pwNew" type="password" autocomplete="new-password"></div>
+    <div class="fl"><label>ยืนยันรหัสผ่านใหม่</label><input id="pwNew2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePw()"></div>
+    <button class="auth-btn" style="background:#E08A1E;" onclick="doChangePw()">บันทึกรหัสผ่านใหม่</button>
+    <div class="auth-err" id="pwErr"></div>
+    <div class="auth-alt"><a onclick="hidePw()">ยกเลิก</a></div>
+  </div>
+</div>
+
 <div class="dtl" id="dtlModal" onclick="if(event.target===this)closeDtl()"><div class="dtl-box" id="dtlBox"></div></div>
 <div class="gtoast" id="gtoast"></div>
 
@@ -679,7 +692,10 @@ async function api(pathname,opts){var base=apiBase();if(base===null)throw new Er
 function showAuth(){currentUser=null;setUserUI();document.getElementById('authOverlay').classList.add('show');}
 function hideAuth(){document.getElementById('authOverlay').classList.remove('show');}
 function authMode(m){document.getElementById('authLogin').style.display=(m==='login')?'block':'none';document.getElementById('authReg').style.display=(m==='reg')?'block':'none';}
-function setUserUI(){var cu=document.getElementById('curUser');var lo=document.getElementById('btnLogout');var ta=document.getElementById('tbAdmin');if(currentUser){cu.textContent=(currentUser.name||currentUser.username)+(isAdmin()?' (admin)':'');lo.style.display='';ta.style.display=isAdmin()?'':'none';}else{cu.textContent='ยังไม่เข้าสู่ระบบ';lo.style.display='none';ta.style.display='none';}}
+function setUserUI(){var cu=document.getElementById('curUser');var lo=document.getElementById('btnLogout');var pw=document.getElementById('btnPw');var ta=document.getElementById('tbAdmin');if(currentUser){cu.textContent=(currentUser.name||currentUser.username)+(isAdmin()?' (admin)':'');lo.style.display='';pw.style.display='';ta.style.display=isAdmin()?'':'none';}else{cu.textContent='ยังไม่เข้าสู่ระบบ';lo.style.display='none';pw.style.display='none';ta.style.display='none';}}
+function showPw(){['pwOld','pwNew','pwNew2'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('pwErr').textContent='';document.getElementById('pwErr').classList.remove('auth-ok');document.getElementById('pwOverlay').classList.add('show');}
+function hidePw(){document.getElementById('pwOverlay').classList.remove('show');}
+async function doChangePw(){var err=document.getElementById('pwErr');err.classList.remove('auth-ok');err.textContent='';var o=document.getElementById('pwOld').value,n1=document.getElementById('pwNew').value,n2=document.getElementById('pwNew2').value;if(n1!==n2){err.textContent='รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน';return;}try{await api('/api/password',{method:'POST',headers:apiHeaders(),body:JSON.stringify({oldPassword:o,newPassword:n1})});gToast('เปลี่ยนรหัสผ่านแล้ว ✓');hidePw();}catch(e){err.textContent=e.message;}}
 async function checkAuth(){if(apiBase()===null){showAuth();document.getElementById('loginErr').textContent='ต้องเปิดหน้านี้ผ่านเซิร์ฟเวอร์ เช่น http://ไอพีเซิร์ฟเวอร์:8080/ (เปิดไฟล์ตรง ๆ ใช้ไม่ได้)';return;}try{var j=await api('/api/me',{headers:apiHeaders(false)});currentUser=j.user;setUserUI();hideAuth();pullFromServer(true);}catch(e){showAuth();}}
 async function doLogin(){var err=document.getElementById('loginErr');err.classList.remove('auth-ok');err.textContent='';try{var j=await api('/api/login',{method:'POST',headers:apiHeaders(),body:JSON.stringify({username:gv('loginUser'),password:document.getElementById('loginPass').value})});currentUser=j.user;setUserUI();hideAuth();document.getElementById('loginPass').value='';gToast('เข้าสู่ระบบแล้ว — '+(currentUser.name||currentUser.username));pullFromServer(true);}catch(e){err.textContent=e.message;}}
 async function doRegister(){var err=document.getElementById('regErr');err.classList.remove('auth-ok');err.textContent='';var p1=document.getElementById('regPass').value,p2=document.getElementById('regPass2').value;if(p1!==p2){err.textContent='รหัสผ่านทั้งสองช่องไม่ตรงกัน';return;}try{var j=await api('/api/register',{method:'POST',headers:apiHeaders(),body:JSON.stringify({username:gv('regUser'),password:p1,name:gv('regName'),prov:document.getElementById('regProv').value})});err.classList.add('auth-ok');err.textContent=j.message||'สมัครแล้ว — รอ admin อนุมัติ';}catch(e){err.textContent=e.message;}}
@@ -711,7 +727,7 @@ async function renderAdmin(){if(!isAdmin())return;
     document.getElementById('admPendTb').innerHTML=pend.length?pend.map(function(u){return '<tr><td>'+escH(u.username)+'</td><td>'+escH(u.name)+'</td><td>'+escH(u.prov||'-')+'</td><td>'+fmtTime(u.createdAt)+'</td><td><button class="adm-act adm-ap" onclick="admApprove(\''+u.id+'\',\'officer\')">อนุมัติ (เจ้าหน้าที่)</button><button class="adm-act adm-ap" style="background:#7F77DD;" onclick="admApprove(\''+u.id+'\',\'admin\')">อนุมัติเป็น admin</button><button class="adm-act adm-rj" onclick="admReject(\''+u.id+'\')">ปฏิเสธ</button></td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ไม่มีผู้ใช้รออนุมัติ</td></tr>';
     document.getElementById('admUserTb').innerHTML=uj.users.map(function(u){return '<tr><td>'+escH(u.username)+'</td><td>'+escH(u.name)+'</td><td>'+escH(u.prov||'-')+'</td><td>'+(u.role==='admin'?'<span class="bge-adm">admin</span>':'เจ้าหน้าที่')+'</td><td>'+(u.status==='approved'?'<span class="bge-appr">อนุมัติแล้ว</span>':'<span class="bge-pend">รออนุมัติ</span>')+'</td><td>'+(currentUser&&u.username===currentUser.username?'-':'<button class="adm-act adm-rj" onclick="admReject(\''+u.id+'\')">ลบบัญชี</button>')+'</td></tr>';}).join('');
     var aj=await api('/api/audit?limit=300',{headers:apiHeaders(false)});
-    var AN={login:'เข้าสู่ระบบ',logout:'ออกจากระบบ',login_failed:'เข้าระบบไม่สำเร็จ',login_denied:'ถูกปฏิเสธ (ยังไม่อนุมัติ)',register:'สมัครสมาชิก',approve_user:'อนุมัติผู้ใช้',reject_user:'ลบ/ปฏิเสธผู้ใช้',save_records:'บันทึกข้อมูล',delete_records:'ลบข้อมูล'};
+    var AN={login:'เข้าสู่ระบบ',logout:'ออกจากระบบ',login_failed:'เข้าระบบไม่สำเร็จ',login_denied:'ถูกปฏิเสธ (ยังไม่อนุมัติ)',register:'สมัครสมาชิก',approve_user:'อนุมัติผู้ใช้',reject_user:'ลบ/ปฏิเสธผู้ใช้',save_records:'บันทึกข้อมูล',delete_records:'ลบข้อมูล',change_password:'เปลี่ยนรหัสผ่าน',change_password_failed:'เปลี่ยนรหัสผ่านไม่สำเร็จ',reset_password:'รีเซ็ตรหัสผ่าน (ที่เซิร์ฟเวอร์)'};
     document.getElementById('admAuditTb').innerHTML=aj.entries.length?aj.entries.map(function(a){return '<tr><td style="white-space:nowrap;">'+fmtTime(a.time)+'</td><td>'+escH(a.user)+'</td><td style="white-space:nowrap;">'+(AN[a.action]||escH(a.action))+'</td><td>'+escH(a.detail||'')+'</td><td>'+escH(a.ip||'')+'</td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ยังไม่มีบันทึก</td></tr>';
   }catch(e){gToast('โหลดข้อมูลจัดการระบบไม่สำเร็จ: '+e.message);}
 }
