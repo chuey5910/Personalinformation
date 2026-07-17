@@ -733,7 +733,8 @@ async function renderAdmin(){if(!isAdmin())return;
 }
 async function admApprove(id,role){try{await api('/api/users/approve',{method:'POST',headers:apiHeaders(),body:JSON.stringify({id:id,role:role})});gToast('อนุมัติแล้ว');renderAdmin();}catch(e){gToast(e.message);}}
 async function admReject(id){if(!confirm('ลบ/ปฏิเสธบัญชีนี้?'))return;try{await api('/api/users/reject',{method:'POST',headers:apiHeaders(),body:JSON.stringify({id:id})});gToast('ลบบัญชีแล้ว');renderAdmin();}catch(e){gToast(e.message);}}
-function sw(t){document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['form','dash','list','prov','admin'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='dash'){updDash();pullFromServer(true);}if(t==='list')rList();if(t==='prov')rProv();if(t==='admin')renderAdmin();}
+var _admT=null;
+function sw(t){document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['form','dash','list','prov','admin'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='dash'){updDash();pullFromServer(true);}if(t==='list')rList();if(t==='prov')rProv();if(_admT){clearInterval(_admT);_admT=null;}if(t==='admin'){renderAdmin();_admT=setInterval(renderAdmin,15000);}}
 function mkC(id,cfg){if(typeof Chart==='undefined')return;if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 function updDash(){
   const fp=document.getElementById('dfltP').value,fg=document.getElementById('dfltG').value;
