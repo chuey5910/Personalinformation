@@ -348,8 +348,23 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ----- admin เท่านั้น -----
-    if (url.pathname === '/api/users' || url.pathname === '/api/users/approve' || url.pathname === '/api/users/reject' || url.pathname === '/api/audit') {
+    if (url.pathname === '/api/users' || url.pathname === '/api/users/approve' || url.pathname === '/api/users/reject' || url.pathname === '/api/users/resetpw' || url.pathname === '/api/audit') {
       if (!isAdmin) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้น' }); return; }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/users/resetpw') {
+      const d = JSON.parse(await readBody(req) || '{}');
+      const u = users.find((x) => x.id === d.id);
+      if (!u) { sendJSON(res, 404, { ok: false, error: 'ไม่พบผู้ใช้' }); return; }
+      const np = String(d.newPassword || '');
+      if (np.length < 6) { sendJSON(res, 400, { ok: false, error: 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร' }); return; }
+      u.salt = crypto.randomBytes(16).toString('hex');
+      u.hash = hashPassword(np, u.salt);
+      saveUsers();
+      Object.keys(sessions).forEach((k) => { if (sessions[k].userId === u.id) delete sessions[k]; });
+      saveSessions();
+      audit('admin_reset_password', me.username, 'ตั้งรหัสผ่านใหม่ให้ ' + u.username, req);
+      sendJSON(res, 200, { ok: true }); return;
     }
 
     if (req.method === 'GET' && url.pathname === '/api/users') {
