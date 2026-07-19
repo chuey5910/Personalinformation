@@ -236,6 +236,35 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
 .photo-clear{background:none;border:none;color:#C44;font-size:12px;cursor:pointer;}
 .mg6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.2rem;}@media(max-width:640px){.mg6{grid-template-columns:1fr 1fr;}}
 .dashsync{font-size:12px;color:var(--color-text-secondary);margin:0 0 10px;min-height:16px;display:flex;align-items:center;gap:5px;}
+/* ===== responsive: มือถือ/แท็บเล็ต — ห้ามล้นขอบจอ ===== */
+html,body{overflow-x:hidden;max-width:100vw;}
+.card-main *{min-width:0;}
+img{max-width:100%;height:auto;}
+input,select,textarea{max-width:100%;}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tc{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tc table{min-width:560px;}
+.cc{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.cc div[style*="position:relative"]{min-width:480px;} /* กราฟกว้างพออ่านชื่อจังหวัด/กลุ่มได้ แล้วเลื่อนดูในกล่องตัวเอง */
+.cpchk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.subhd{flex-wrap:wrap;row-gap:4px;}
+@media (max-width:900px){
+  .fg3{grid-template-columns:1fr 1fr;}
+  .cg2{grid-template-columns:1fr;}
+}
+@media (max-width:600px){
+  .wrap{padding:0 8px 40px;}
+  .card-main{padding:12px 10px;border-radius:10px;}
+  .appbar-in{padding:10px 10px;}
+  .fg,.fg3{grid-template-columns:1fr;}
+  .mg6{grid-template-columns:repeat(2,1fr);}
+  .dtl-grid{grid-template-columns:1fr;}
+  .formbanner{padding:10px;gap:10px;}
+  .cpchk{white-space:normal;}
+  .sbox{flex:1;}
+  .sbox input{width:100%;}
+}
+
 /* ===== ระบบ login / จัดการผู้ใช้ ===== */
 .auth-ov{position:fixed;inset:0;background:var(--color-background-primary,#fff);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding:48px 16px;overflow:auto;}
 .auth-ov.show{display:flex;}
@@ -501,9 +530,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
     <div class="thead2">
       <span>รายชื่อ (<span id="lcnt">0</span> คน)</span>
       <div class="exp-tools">
-        <button class="exp-btn" onclick="exportCSV()"><i class="ti ti-file-type-csv"></i> CSV</button>
-        <button class="exp-btn" onclick="exportXLSX()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
-        <button class="exp-btn gg" onclick="syncServer()"><i class="ti ti-cloud-upload"></i> ส่งขึ้น CHUEY-Server</button>
+        <button class="exp-btn" id="btnXlsx" style="display:none;" onclick="showExportPreview()"><i class="ti ti-file-spreadsheet"></i> Excel (admin)</button>
       </div>
     </div>
     <table><thead><tr>
@@ -561,6 +588,18 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
       <button class="auth-btn" style="background:#378ADD;" onclick="doRegister()">ลงทะเบียน</button>
       <div class="auth-err" id="regErr"></div>
       <div class="auth-alt">มีบัญชีแล้ว? <a onclick="authMode('login')">เข้าสู่ระบบ</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="auth-ov" id="expOverlay" onclick="if(event.target===this)hideExport()">
+  <div class="auth-box" style="max-width:960px;">
+    <h2><i class="ti ti-file-spreadsheet" style="color:#1D9E75;"></i> ตัวอย่างข้อมูลก่อนบันทึกเป็นไฟล์ Excel</h2>
+    <div class="sub" id="expInfo"></div>
+    <div id="expTblWrap" style="overflow:auto;max-height:55vh;border:1px solid var(--color-border-tertiary);border-radius:8px;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="usr-out" style="padding:9px 16px;font-size:13px;" onclick="hideExport()">ยกเลิก</button>
+      <button class="auth-btn" style="width:auto;padding:9px 18px;margin:0;" onclick="doSaveXlsx()"><i class="ti ti-download"></i> บันทึกเป็นไฟล์ Excel</button>
     </div>
   </div>
 </div>
@@ -681,8 +720,11 @@ function flatRecWatch(r,i){return {'ลำดับ':i+1,'ชื่อ':r.fn,'�
 function allFlat(){return recs.map((r,i)=>flatRec(r,i));}
 function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
 function stamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;}
-function exportCSV(){const rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}const cols=Object.keys(rows[0]);const esc=v=>{v=(v==null?'':String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\r\n');dl(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),'person_data_'+stamp()+'.csv');gToast('ส่งออก CSV แล้ว ('+rows.length+' รายการ)');}
-function exportXLSX(){const rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}try{const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ข้อมูลบุคคล');XLSX.writeFile(wb,'person_data_'+stamp()+'.xlsx');gToast('ส่งออก Excel แล้ว ('+rows.length+' รายการ)');}catch(e){gToast('ส่งออกไม่สำเร็จ');}}
+function exportXLSX(){const rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}try{const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ข้อมูลบุคคล');XLSX.writeFile(wb,'person_data_'+stamp()+'.xlsx');gToast('บันทึกไฟล์ Excel แล้ว ('+rows.length+' รายการ)');}catch(e){gToast('ส่งออกไม่สำเร็จ');}}
+// แสดงตัวอย่างข้อมูลให้ตรวจก่อน แล้วค่อยกดบันทึกเป็นไฟล์ Excel (เฉพาะ admin)
+function showExportPreview(){if(!isAdmin()){gToast('การส่งออกข้อมูลทำได้เฉพาะ admin');return;}var rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}var cols=[];rows.forEach(function(r){Object.keys(r).forEach(function(k){if(cols.indexOf(k)<0)cols.push(k);});});var LIM=100;var show=rows.slice(0,LIM);var html='<table class="adm-tbl" style="min-width:'+Math.max(900,cols.length*110)+'px;"><thead><tr>'+cols.map(function(c){return '<th>'+escH(c)+'</th>';}).join('')+'</tr></thead><tbody>'+show.map(function(r){return '<tr>'+cols.map(function(c){return '<td>'+escH(r[c]==null?'':r[c])+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>';document.getElementById('expTblWrap').innerHTML=html;document.getElementById('expInfo').textContent='ทั้งหมด '+rows.length+' รายการ · '+cols.length+' คอลัมน์'+(rows.length>LIM?(' — แสดงตัวอย่าง '+LIM+' รายการแรก (ไฟล์จริงจะได้ครบทุกรายการ)'):'')+' · ตรวจสอบแล้วกดปุ่มบันทึกด้านล่าง';document.getElementById('expOverlay').classList.add('show');}
+function hideExport(){document.getElementById('expOverlay').classList.remove('show');}
+function doSaveXlsx(){exportXLSX();hideExport();}
 // ===== CHUEY-Server: ระบบผู้ใช้ + sync =====
 let currentUser=null;
 function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
@@ -692,7 +734,7 @@ async function api(pathname,opts){var base=apiBase();if(base===null)throw new Er
 function showAuth(){currentUser=null;setUserUI();document.getElementById('authOverlay').classList.add('show');}
 function hideAuth(){document.getElementById('authOverlay').classList.remove('show');}
 function authMode(m){document.getElementById('authLogin').style.display=(m==='login')?'block':'none';document.getElementById('authReg').style.display=(m==='reg')?'block':'none';}
-function setUserUI(){var cu=document.getElementById('curUser');var lo=document.getElementById('btnLogout');var pw=document.getElementById('btnPw');var ta=document.getElementById('tbAdmin');if(currentUser){cu.textContent=(currentUser.name||currentUser.username)+(isAdmin()?' (admin)':'');lo.style.display='';pw.style.display='';ta.style.display=isAdmin()?'':'none';}else{cu.textContent='ยังไม่เข้าสู่ระบบ';lo.style.display='none';pw.style.display='none';ta.style.display='none';}}
+function setUserUI(){var cu=document.getElementById('curUser');var lo=document.getElementById('btnLogout');var pw=document.getElementById('btnPw');var ta=document.getElementById('tbAdmin');var xb=document.getElementById('btnXlsx');if(currentUser){cu.textContent=(currentUser.name||currentUser.username)+(isAdmin()?' (admin)':'');lo.style.display='';pw.style.display='';ta.style.display=isAdmin()?'':'none';if(xb)xb.style.display=isAdmin()?'':'none';}else{cu.textContent='ยังไม่เข้าสู่ระบบ';lo.style.display='none';pw.style.display='none';ta.style.display='none';if(xb)xb.style.display='none';}}
 function showPw(){['pwOld','pwNew','pwNew2'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('pwErr').textContent='';document.getElementById('pwErr').classList.remove('auth-ok');document.getElementById('pwOverlay').classList.add('show');}
 function hidePw(){document.getElementById('pwOverlay').classList.remove('show');}
 async function doChangePw(){var err=document.getElementById('pwErr');err.classList.remove('auth-ok');err.textContent='';var o=document.getElementById('pwOld').value,n1=document.getElementById('pwNew').value,n2=document.getElementById('pwNew2').value;if(n1!==n2){err.textContent='รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน';return;}try{await api('/api/password',{method:'POST',headers:apiHeaders(),body:JSON.stringify({oldPassword:o,newPassword:n1})});gToast('เปลี่ยนรหัสผ่านแล้ว ✓');hidePw();}catch(e){err.textContent=e.message;}}
