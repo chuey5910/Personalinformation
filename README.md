@@ -56,50 +56,88 @@ node server.js            # พอร์ตเริ่มต้น 8080 (เป
 
 NAS เปิดตลอด 24 ชม. และมี RAID ป้องกันดิสก์พัง จึงเหมาะเป็นเซิร์ฟเวอร์ถาวรมากกว่าเครื่องเดสก์ท็อป
 
-**เตรียมก่อน:** ตั้ง Storage Pool เป็น **RAID 1** (มิเรอร์ — ดิสก์พัง 1 ลูกข้อมูลยังอยู่), เปิดแอป Docker ใน UGOS, และติดตั้ง Tailscale บน NAS
+**เตรียมก่อน:** ตั้ง Storage Pool เป็น **RAID 1** (มิเรอร์ — ดิสก์พัง 1 ลูกข้อมูลยังอยู่), เปิดแอป Docker ใน UGOS, ติดตั้ง Tailscale บน NAS
+
+#### โครงสร้างโฟลเดอร์ (แยกแต่ละแอพไม่ให้ปะปนกัน)
+
+```
+/volume1/docker/
+├── luna/
+├── tailscale/
+├── news_report/
+└── sb1/                 ← แอพนี้
+    ├── app/             โค้ด (git clone; ลบ/โคลนใหม่ได้ ข้อมูลไม่กระทบ)
+    ├── data/            ข้อมูลจริง + ไฟล์สำรอง (ห้ามลบ)
+    └── secrets/         .env (รหัส admin ตอนตั้งค่าครั้งแรก)
+```
+
+หลักการ: **โค้ด / ข้อมูล / ความลับ อยู่คนละโฟลเดอร์** — อัปเดตหรือรื้อโค้ดใหม่ได้โดยไม่แตะข้อมูล และสำรองข้อมูลได้ด้วยการสำรอง `data/` โฟลเดอร์เดียว
+
+> **ทะเบียนพอร์ต** — แอพนี้ใช้พอร์ต **8081** บน NAS จดไว้กันชนกับแอพอื่น ถ้าซ้ำให้แก้เลขตัวซ้ายใน `docker-compose.yml` (เช่น `"8091:8081"`)
+
+#### ติดตั้งครั้งแรก
 
 ```bash
-# 1) ดึงโค้ดลง NAS (ผ่าน SSH ของ NAS)
-cd /volume1/docker
-git clone https://github.com/chuey5910/Personalinformation.git sb1
-cd sb1
+# 1) สร้างโครงสร้างโฟลเดอร์ + โคลนโค้ดลงใน app/
+mkdir -p /volume1/docker/sb1/data /volume1/docker/sb1/secrets
+cd /volume1/docker/sb1
+git clone https://github.com/chuey5910/Personalinformation.git app
 
-# 2) ครั้งแรกสุด: สร้างบัญชี admin ผ่านไฟล์ .env
-printf 'ADMIN_USER=admin\nADMIN_PASS=รหัสผ่านของคุณ\n' > .env
+# 2) ให้สิทธิ์โฟลเดอร์ข้อมูลกับผู้ใช้ในคอนเทนเนอร์ (uid 1000) และล็อกโฟลเดอร์ความลับ
+chown -R 1000:1000 data
+chmod 700 secrets
 
-# 3) สร้างและรัน (รันเบื้องหลัง เปิดเครื่องใหม่ก็รันเอง)
+# 3) ใส่รหัส admin ครั้งแรก (ไฟล์นี้อ่านอัตโนมัติ ไม่ต้องพิมพ์รหัสในคำสั่ง)
+printf 'ADMIN_USER=admin\nADMIN_PASS=รหัสผ่านของคุณ\n' > secrets/.env
+chmod 600 secrets/.env
+
+# 4) สร้าง image และรัน (รันเบื้องหลัง เปิดเครื่องใหม่ก็รันเอง)
+cd app
 docker compose up -d --build
+docker compose logs --tail 20          # ต้องเห็น "สร้างบัญชี admin แล้ว" + "พร้อมใช้งาน"
 
-# 4) เมื่อเห็นว่าสร้าง admin แล้ว ให้ลบ .env ทิ้งเพื่อความปลอดภัย แล้วรีสตาร์ท
-docker compose logs --tail 20
-rm .env && docker compose up -d
-
-# คำสั่งที่ใช้บ่อย
-docker compose logs -f        # ดู log สด
-docker compose restart        # รีสตาร์ท
-docker compose down           # หยุด (ข้อมูลใน data/ ไม่หาย)
-git pull && docker compose up -d --build   # อัปเดตเวอร์ชันใหม่
+# 5) ลบรหัสออกจาก secrets/.env แล้วรีสตาร์ท (ไม่ต้องเก็บรหัสไว้ในไฟล์ถาวร)
+printf '' > ../secrets/.env
+docker compose up -d
 ```
 
 เปิดใช้งานที่ `http://<Tailscale IP ของ NAS>:8081/`
 
-**สำรองข้อมูลอัตโนมัติ:** UGOS → Control Panel → Task Scheduler → Scheduled Task (รายวัน) สั่งรัน
-`sh /volume1/docker/sb1/backup-data.sh /volume1/backup/sb1`
-(เก็บย้อนหลัง 30 วันโดยอัตโนมัติ ปรับได้ด้วย `KEEP_DAYS`)
+#### คำสั่งที่ใช้บ่อย (รันจากในโฟลเดอร์ `app/`)
+
+```bash
+docker compose logs -f                      # ดู log สด
+docker compose restart                      # รีสตาร์ท
+docker compose down                         # หยุด (ข้อมูลใน ../data ไม่หาย)
+git pull && docker compose up -d --build    # อัปเดตเป็นเวอร์ชันใหม่
+```
+
+**ตั้งค่าเพิ่มเติมได้ใน `secrets/.env`:** `SESSION_HOURS` (อายุ session, ค่าเริ่มต้น 12 ชม.) และ `ADMIN_USER`/`ADMIN_PASS` เมื่อต้องรีเซ็ตรหัส admin (ใส่ → `docker compose up -d` → ล้างไฟล์ → `docker compose up -d` อีกครั้ง)
+
+#### สำรองข้อมูลอัตโนมัติ
+
+UGOS → Control Panel → Task Scheduler → Scheduled Task (รายวัน) สั่งรัน:
+
+```
+sh /volume1/docker/sb1/app/backup-data.sh /volume1/backup/sb1
+```
+
+สคริปต์หาโฟลเดอร์ `data/` เองอัตโนมัติ และเก็บย้อนหลัง 30 วัน (ปรับด้วย `KEEP_DAYS`)
 
 > **RAID ไม่ใช่การสำรองข้อมูล** — ไฟไหม้/ถูกขโมย/ลบผิด RAID ช่วยไม่ได้ ควรสำเนา `data/` ออกไปนอก NAS อีกชุด (External HDD หรือ cloud ที่หน่วยงานอนุญาต)
 
 ### ย้ายจากเครื่องเดิม (Mac mini) มา NAS
 
 ```bash
-# ที่ Mac mini — สำรองข้อมูลปัจจุบันออกมาก่อน
+# ที่ Mac mini — สำรองข้อมูลปัจจุบันไว้ก่อน
 cd ~/Personalinformation && ./backup-data.sh
 
-# คัดลอกทั้งโฟลเดอร์ data/ ไปยัง NAS (แก้ user@nas ตามจริง)
-scp -r ~/Personalinformation/data user@nas:/volume1/docker/sb1/
+# คัดลอกเฉพาะ "เนื้อใน" โฟลเดอร์ data ไปยัง data/ ของ NAS (แก้ user@nas ตามจริง)
+scp -r ~/Personalinformation/data/* user@nas:/volume1/docker/sb1/data/
 
-# ที่ NAS — รีสตาร์ทให้อ่านข้อมูลที่เพิ่งคัดลอกมา
-cd /volume1/docker/sb1 && docker compose restart
+# ที่ NAS — คืนสิทธิ์ให้คอนเทนเนอร์อ่านเขียนได้ แล้วรีสตาร์ท
+chown -R 1000:1000 /volume1/docker/sb1/data
+cd /volume1/docker/sb1/app && docker compose restart
 ```
 
 บัญชีผู้ใช้ ข้อมูลทุกประเภท และ audit log ทั้งหมดจะตามมาครบ เจ้าหน้าที่ไม่ต้องสมัครใหม่ — เพียงเปลี่ยน IP ที่พิมพ์เป็นของ NAS

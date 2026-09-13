@@ -1,12 +1,17 @@
-# SB1 Web App บน NAS (UGREEN DXP4800 Plus)
+# SB1 Web App — สำหรับรันบน NAS (UGREEN DXP4800 Plus / UGOS Pro)
 #
-# ใช้:  docker compose up -d --build      เริ่มใช้งาน (สร้าง image + รันเบื้องหลัง)
-#       docker compose logs -f            ดู log
-#       docker compose restart            รีสตาร์ท
-#       docker compose down               หยุด (ข้อมูลใน ./data ไม่ถูกลบ)
+# โครงสร้างโฟลเดอร์บน NAS (โค้ด / ข้อมูล / ความลับ แยกกันชัดเจน):
+#   /volume1/docker/sb1/
+#   ├── app/       ← โค้ด (โฟลเดอร์นี้ = git clone; ลบหรือโคลนใหม่ได้ ข้อมูลไม่กระทบ)
+#   ├── data/      ← ข้อมูลจริง + ไฟล์สำรอง (ห้ามลบ)
+#   └── secrets/   ← .env (รหัส admin ตอนตั้งค่าครั้งแรก)
 #
-# ครั้งแรกสุด (ยังไม่มีบัญชี admin) ให้ตั้งค่า ADMIN_USER/ADMIN_PASS ในไฟล์ .env ก่อน
-# แล้วลบทิ้ง/คอมเมนต์ออกหลังสร้างบัญชีเสร็จ (ดู README)
+# รันคำสั่งทั้งหมดจากในโฟลเดอร์ app/
+#   docker compose up -d --build      เริ่มใช้งาน (สร้าง image + รันเบื้องหลัง)
+#   docker compose logs -f            ดู log สด
+#   docker compose restart            รีสตาร์ท
+#   docker compose down               หยุด (ข้อมูลใน ../data ไม่ถูกลบ)
+#   git pull && docker compose up -d --build    อัปเดตเวอร์ชันใหม่
 
 services:
   sb1:
@@ -16,26 +21,34 @@ services:
     restart: unless-stopped
 
     ports:
-      # ซ้าย = พอร์ตบน NAS, ขวา = พอร์ตในคอนเทนเนอร์
-      # ผูกกับ 0.0.0.0 เพื่อให้เข้าผ่าน Tailscale ได้ — ห้าม port forward ที่เราเตอร์
+      # ซ้าย = พอร์ตบน NAS · ขวา = พอร์ตในคอนเทนเนอร์ (อย่าแก้ตัวขวา)
+      # ถ้าพอร์ต 8081 ชนกับแอพอื่นบน NAS ให้แก้เฉพาะเลขตัวซ้าย เช่น "8091:8081"
+      # ผูกกับทุก interface เพื่อให้เข้าผ่าน Tailscale ได้ — ห้าม port forward ที่เราเตอร์
       - "8081:8081"
 
     volumes:
-      # ข้อมูลจริงทั้งหมดอยู่ในโฟลเดอร์ data/ ข้าง ๆ ไฟล์นี้ (บนดิสก์ NAS)
-      # สำรองข้อมูล = สำรองโฟลเดอร์นี้โฟลเดอร์เดียว
-      - ./data:/data
+      # ข้อมูลจริงอยู่นอกโฟลเดอร์โค้ด — ลบ/โคลน app/ ใหม่ได้โดยข้อมูลไม่หาย
+      # สำรองข้อมูล = สำรองโฟลเดอร์ ../data โฟลเดอร์เดียวจบ
+      - ../data:/data
+
+    # ค่าลับและค่าตั้งเพิ่มเติมอ่านจาก secrets/.env (ไม่มีไฟล์ก็รันได้ตามปกติ)
+    # ใส่ได้: ADMIN_USER, ADMIN_PASS (เฉพาะตอนสร้าง/รีเซ็ต admin), SESSION_HOURS
+    env_file:
+      - path: ../secrets/.env
+        required: false
 
     environment:
+      # ค่าคงที่ของคอนเทนเนอร์ — ห้ามย้ายไป secrets/.env เพราะค่าตรงนี้จะทับเสมอ
       - PORT=8081
       - DATA_DIR=/data
-      - SESSION_HOURS=12
       - TZ=Asia/Bangkok
-      # ตั้งค่าใน .env เฉพาะตอนสร้าง admin ครั้งแรก หรือตอนต้องรีเซ็ตรหัสผ่าน admin
-      - ADMIN_USER=${ADMIN_USER:-}
-      - ADMIN_PASS=${ADMIN_PASS:-}
 
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  default:
+    name: sb1_net
