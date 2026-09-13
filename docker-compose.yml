@@ -1,0 +1,41 @@
+# SB1 Web App บน NAS (UGREEN DXP4800 Plus)
+#
+# ใช้:  docker compose up -d --build      เริ่มใช้งาน (สร้าง image + รันเบื้องหลัง)
+#       docker compose logs -f            ดู log
+#       docker compose restart            รีสตาร์ท
+#       docker compose down               หยุด (ข้อมูลใน ./data ไม่ถูกลบ)
+#
+# ครั้งแรกสุด (ยังไม่มีบัญชี admin) ให้ตั้งค่า ADMIN_USER/ADMIN_PASS ในไฟล์ .env ก่อน
+# แล้วลบทิ้ง/คอมเมนต์ออกหลังสร้างบัญชีเสร็จ (ดู README)
+
+services:
+  sb1:
+    build: .
+    image: sb1-webapp:latest
+    container_name: sb1
+    restart: unless-stopped
+
+    ports:
+      # ซ้าย = พอร์ตบน NAS, ขวา = พอร์ตในคอนเทนเนอร์
+      # ผูกกับ 0.0.0.0 เพื่อให้เข้าผ่าน Tailscale ได้ — ห้าม port forward ที่เราเตอร์
+      - "8081:8081"
+
+    volumes:
+      # ข้อมูลจริงทั้งหมดอยู่ในโฟลเดอร์ data/ ข้าง ๆ ไฟล์นี้ (บนดิสก์ NAS)
+      # สำรองข้อมูล = สำรองโฟลเดอร์นี้โฟลเดอร์เดียว
+      - ./data:/data
+
+    environment:
+      - PORT=8081
+      - DATA_DIR=/data
+      - SESSION_HOURS=12
+      - TZ=Asia/Bangkok
+      # ตั้งค่าใน .env เฉพาะตอนสร้าง admin ครั้งแรก หรือตอนต้องรีเซ็ตรหัสผ่าน admin
+      - ADMIN_USER=${ADMIN_USER:-}
+      - ADMIN_PASS=${ADMIN_PASS:-}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

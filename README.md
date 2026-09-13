@@ -21,6 +21,8 @@
 - `server.js` — backend บน CHUEY-Server (Node.js ล้วน **ไม่ต้อง npm install**): เสิร์ฟหน้าเว็บ + API + ระบบผู้ใช้/session + audit log
 - `assets/` — ไลบรารีและฟอนต์ทั้งหมด (Chart.js, SheetJS, Tabler icons, ฟอนต์ Sarabun, ฐานข้อมูลจังหวัด/อำเภอ/ตำบล+รหัสไปรษณีย์ 77 จังหวัด) เสิร์ฟจากเซิร์ฟเวอร์เอง — **ระบบทำงานได้เต็มรูปแบบแม้เครือข่ายภายในไม่มีอินเทอร์เน็ต**
 - `setup-macos-service.sh` — สคริปต์ติดตั้งเป็น service บน macOS (รันเบื้องหลัง ปิดหน้าต่าง Terminal ได้)
+- `Dockerfile` / `docker-compose.yml` — สำหรับรันบน NAS (UGREEN DXP4800 Plus) หรือเครื่องใดก็ได้ที่มี Docker
+- `backup-data.sh` — สคริปต์สำรองโฟลเดอร์ `data/` เป็นไฟล์ .tar.gz ลงวันที่ (ตั้งให้ทำอัตโนมัติได้)
 - `data/` — ข้อมูลจริงทั้งหมด (สร้างอัตโนมัติ, **ถูก .gitignore ไว้ ห้าม commit**)
   - `records.json` ข้อมูลบุคคล/สถานที่/คดี/กิจกรรม
   - `users.json` บัญชีผู้ใช้ (รหัสผ่านถูก hash ด้วย scrypt + salt)
@@ -49,6 +51,60 @@ node server.js            # พอร์ตเริ่มต้น 8080 (เป
 2. แจ้ง admin ให้เข้าแท็บ **"จัดการระบบ"** → กด **อนุมัติ**
 3. เจ้าหน้าที่ login แล้วใช้งานได้: เพิ่มข้อมูล + ดู Dashboard/รายชื่อ/สรุป ได้ทุกจังหวัด (ข้อมูลซิงก์ขึ้นเซิร์ฟเวอร์อัตโนมัติเมื่อบันทึก รวมรูปภาพ)
 4. การแก้ไข/ลบข้อมูล ทำได้เฉพาะ admin (ปุ่มลบอยู่ท้ายหน้ารายละเอียดของแต่ละรายการ)
+
+### ติดตั้งบน NAS ด้วย Docker (UGREEN DXP4800 Plus / UGOS Pro) — แนะนำสำหรับใช้งานจริง
+
+NAS เปิดตลอด 24 ชม. และมี RAID ป้องกันดิสก์พัง จึงเหมาะเป็นเซิร์ฟเวอร์ถาวรมากกว่าเครื่องเดสก์ท็อป
+
+**เตรียมก่อน:** ตั้ง Storage Pool เป็น **RAID 1** (มิเรอร์ — ดิสก์พัง 1 ลูกข้อมูลยังอยู่), เปิดแอป Docker ใน UGOS, และติดตั้ง Tailscale บน NAS
+
+```bash
+# 1) ดึงโค้ดลง NAS (ผ่าน SSH ของ NAS)
+cd /volume1/docker
+git clone https://github.com/chuey5910/Personalinformation.git sb1
+cd sb1
+
+# 2) ครั้งแรกสุด: สร้างบัญชี admin ผ่านไฟล์ .env
+printf 'ADMIN_USER=admin\nADMIN_PASS=รหัสผ่านของคุณ\n' > .env
+
+# 3) สร้างและรัน (รันเบื้องหลัง เปิดเครื่องใหม่ก็รันเอง)
+docker compose up -d --build
+
+# 4) เมื่อเห็นว่าสร้าง admin แล้ว ให้ลบ .env ทิ้งเพื่อความปลอดภัย แล้วรีสตาร์ท
+docker compose logs --tail 20
+rm .env && docker compose up -d
+
+# คำสั่งที่ใช้บ่อย
+docker compose logs -f        # ดู log สด
+docker compose restart        # รีสตาร์ท
+docker compose down           # หยุด (ข้อมูลใน data/ ไม่หาย)
+git pull && docker compose up -d --build   # อัปเดตเวอร์ชันใหม่
+```
+
+เปิดใช้งานที่ `http://<Tailscale IP ของ NAS>:8081/`
+
+**สำรองข้อมูลอัตโนมัติ:** UGOS → Control Panel → Task Scheduler → Scheduled Task (รายวัน) สั่งรัน
+`sh /volume1/docker/sb1/backup-data.sh /volume1/backup/sb1`
+(เก็บย้อนหลัง 30 วันโดยอัตโนมัติ ปรับได้ด้วย `KEEP_DAYS`)
+
+> **RAID ไม่ใช่การสำรองข้อมูล** — ไฟไหม้/ถูกขโมย/ลบผิด RAID ช่วยไม่ได้ ควรสำเนา `data/` ออกไปนอก NAS อีกชุด (External HDD หรือ cloud ที่หน่วยงานอนุญาต)
+
+### ย้ายจากเครื่องเดิม (Mac mini) มา NAS
+
+```bash
+# ที่ Mac mini — สำรองข้อมูลปัจจุบันออกมาก่อน
+cd ~/Personalinformation && ./backup-data.sh
+
+# คัดลอกทั้งโฟลเดอร์ data/ ไปยัง NAS (แก้ user@nas ตามจริง)
+scp -r ~/Personalinformation/data user@nas:/volume1/docker/sb1/
+
+# ที่ NAS — รีสตาร์ทให้อ่านข้อมูลที่เพิ่งคัดลอกมา
+cd /volume1/docker/sb1 && docker compose restart
+```
+
+บัญชีผู้ใช้ ข้อมูลทุกประเภท และ audit log ทั้งหมดจะตามมาครบ เจ้าหน้าที่ไม่ต้องสมัครใหม่ — เพียงเปลี่ยน IP ที่พิมพ์เป็นของ NAS
+
+> แนะนำให้เปิดทั้งสองเครื่องคู่ขนาน 2-3 วันเพื่อทดสอบ **แต่ให้บันทึกข้อมูลจริงที่เครื่องเดียวเท่านั้น** (อีกเครื่องใช้ดูอย่างเดียว) เพราะข้อมูลสองฝั่งไม่ซิงก์หากัน เมื่อมั่นใจแล้วค่อยปิดฝั่ง Mac mini ด้วย `./setup-macos-service.sh uninstall`
 
 ### รันค้างถาวรบน macOS (เช่น Mac mini) — ปิดหน้าต่าง Terminal ได้
 
