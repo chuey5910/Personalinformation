@@ -110,7 +110,7 @@ function cleanRecordNames(r) {
     const p = splitPrefix(r.fn);
     if (p) { r.fn = p.rest; if (!r.title) r.title = p.prefix; changed = true; }
   }
-  ['persons', 'leaders'].forEach((k) => {
+  ['persons', 'leaders', 'suspects', 'victims', 'deceased'].forEach((k) => {
     if (!Array.isArray(r[k])) return;
     r[k].forEach((x) => {
       if (!x || typeof x !== 'object') return;
