@@ -41,6 +41,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const RECORDS_FILE = path.join(DATA_DIR, 'records.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const LINKS_FILE = path.join(DATA_DIR, 'links.json'); // ผลการยืนยันของ admin ว่าเป็นคนเดียวกัน/คนละคน
 const AUDIT_FILE = path.join(DATA_DIR, 'audit.log');
 const SESSION_HOURS = parseFloat(process.env.SESSION_HOURS || '12'); // หมดอายุเมื่อไม่ได้ใช้งานนานเท่านี้
 const MAX_BODY = 200 * 1024 * 1024;
@@ -61,6 +62,7 @@ function writeJSON(file, obj) {
 let records = (loadJSON(RECORDS_FILE, {}).records) || [];
 let users = (loadJSON(USERS_FILE, {}).users) || [];
 let sessions = loadJSON(SESSIONS_FILE, {});
+let links = (loadJSON(LINKS_FILE, {}).links) || [];
 
 function dailyBackup() {
   try {
@@ -74,6 +76,7 @@ function dailyBackup() {
 function saveRecords() { dailyBackup(); writeJSON(RECORDS_FILE, { updatedAt: new Date().toISOString(), records: records }); }
 function saveUsers() { writeJSON(USERS_FILE, { users: users }); }
 function saveSessions() { writeJSON(SESSIONS_FILE, sessions); }
+function saveLinks() { writeJSON(LINKS_FILE, { updatedAt: new Date().toISOString(), links: links }); }
 
 // ---------- audit log (บันทึกการเข้าออก/การกระทำ ทุกครั้ง) ----------
 
@@ -391,6 +394,29 @@ const server = http.createServer(async (req, res) => {
       if (deleted) saveRecords();
       audit('delete_records', me.username, data.all ? ('ลบทั้งหมด ' + deleted + ' รายการ') : ('ลบ ' + deleted + ' รายการ'), req);
       sendJSON(res, 200, { ok: true, deleted: deleted, total: records.length }); return;
+    }
+
+    // ----- ทะเบียนบุคคลกลาง: ผลการยืนยัน (ทุกคนอ่านได้ / admin เท่านั้นที่บันทึก) -----
+    if (req.method === 'GET' && url.pathname === '/api/links') {
+      sendJSON(res, 200, { ok: true, links: links }); return;
+    }
+    if (req.method === 'POST' && url.pathname === '/api/links') {
+      if (!isAdmin) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้นที่ยืนยันข้อมูลบุคคลได้' }); return; }
+      const data = JSON.parse(await readBody(req) || '{}');
+      const items = Array.isArray(data.items) ? data.items : [];
+      let n = 0;
+      items.forEach((it) => {
+        const a = String((it && it.a) || '').slice(0, 300), b = String((it && it.b) || '').slice(0, 300);
+        const d = String((it && it.d) || '');
+        if (!a || !b || a === b || ['same', 'diff', 'clear'].indexOf(d) < 0) return;
+        const k1 = a < b ? a : b, k2 = a < b ? b : a;
+        links = links.filter((x) => !(x.a === k1 && x.b === k2));
+        if (d !== 'clear') links.push({ a: k1, b: k2, d: d, by: me.username, at: new Date().toISOString() });
+        n++;
+      });
+      if (n) saveLinks();
+      audit('confirm_person', me.username, String(data.note || '').slice(0, 200) + ' (' + n + ' คู่)', req);
+      sendJSON(res, 200, { ok: true, saved: n, links: links }); return;
     }
 
     // ----- admin เท่านั้น -----
