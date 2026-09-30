@@ -403,11 +403,6 @@ input,select,textarea{max-width:100%;}
       <div class="rtype-card" id="rtcard_border" style="display:none;border-color:#E24B4A;" onclick="chooseRtype('border')"><i class="ti ti-alert-triangle" style="color:#E24B4A;"></i><div class="rt"><b>สถานการณ์ชายแดน</b><span>บันทึกการปะทะ/สู้รบตามแนวชายแดน (เฉพาะจังหวัดชายแดน)</span></div></div>
     </div>
   </div>
-  <div id="step_sub" style="display:none;">
-    <div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showSub('step_rtype')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span style="color:var(--color-border-secondary);">|</span><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:11px;"></i><span id="pvBadgeSub">-</span></span></div><div class="step-bar"><span class="step-dot"></span><span class="step-dot on"></span><span class="step-dot"></span></div></div>
-    <div class="step-hd"><p class="sh-title" id="subStepTitle">ขั้นตอนที่ 2 — เลือกเมนูย่อย</p><p class="sh-sub" id="subStepSub"></p></div>
-    <div class="gp-list" id="subStepList"></div>
-  </div>
   <div id="step2" style="display:none;">
     <div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showSub('step_rtype')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span style="color:var(--color-border-secondary);">|</span><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:11px;"></i><span id="pvBadge2">-</span></span></div><div class="step-bar"><span class="step-dot"></span><span class="step-dot on"></span><span class="step-dot"></span></div></div>
     <div class="step-hd"><p class="sh-title"><i class="ti ti-users-group" style="font-size:15px;margin-right:5px;vertical-align:-2px;"></i>ขั้นตอนที่ 2 — เลือกกลุ่มบุคคล</p><p class="sh-sub">กลุ่มที่มีลูกศรลง คลิกเพื่อเลือกหัวข้อย่อย</p></div>
@@ -531,7 +526,7 @@ input,select,textarea{max-width:100%;}
 <div class="rbtn"><button class="bs" onclick="clrVIP()">ล้างฟอร์ม</button><button class="bp" onclick="saveVIP()">บันทึกข้อมูล</button></div>
 </div>
 <div id="form_place" style="display:none;">
-<div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showFormSub('place')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:11px;"></i><span id="pvBadgePlace">-</span></span></div></div>
+<div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showSub('step_rtype')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:11px;"></i><span id="pvBadgePlace">-</span></span></div></div>
 <p class="sec"><i class="ti ti-building-monument"></i>ข้อมูลสถานที่</p>
 <div class="fg"><div class="fl"><label>จังหวัด</label><select id="place_pv"></select></div><div class="fl"><label>ชื่อสถานที่</label><input id="pl_name"></div></div>
 <p class="sec"><i class="ti ti-building-church"></i>ประเภทสถานที่ / ทะเบียน</p>
@@ -626,7 +621,7 @@ input,select,textarea{max-width:100%;}
 </div>
 
 <div id="form_org" style="display:none;">
- <div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showFormSub('org')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:12px;"></i> <span id="pvBadgeOrg">-</span></span></div></div>
+ <div class="topbar"><div class="topbar-left"><button class="btn-back" onclick="showSub('step_rtype')"><i class="ti ti-arrow-left" style="font-size:14px;"></i> ประเภท</button><span class="badge-pv"><i class="ti ti-map-pin" style="font-size:12px;"></i> <span id="pvBadgeOrg">-</span></span></div></div>
  <p class="sec"><i class="ti ti-users-group"></i>ข้อมูลกลุ่ม / องค์กร</p>
  <div class="fg"><div class="fl"><label>จังหวัด</label><select id="org_pv"></select></div><div class="fl"><label>ชื่อองค์กร / กลุ่ม <span style="color:#E24B4A;">*</span></label><input id="org_name"></div></div>
  <div class="fg3" style="margin-top:8px;"><div class="fl"><label>สถานะองค์กร</label><select id="org_status"><option value="">-</option><option>มูลนิธิ</option><option>สมาคม</option><option>กลุ่มอิสระ / เครือข่ายไม่จดทะเบียน</option><option>กลุ่มปัญหาในพื้นที่</option><option>อื่นๆ</option></select></div><div class="fl"><label>สัญชาติ</label><input id="org_nationality" placeholder="เช่น ไทย"></div><div class="fl"><label>จำนวนมวลชนในกลุ่ม</label><input id="org_members"></div></div>
@@ -941,20 +936,14 @@ function closeDtl(){document.getElementById('dtlModal').classList.remove('show')
 // ===== Multi record-type extension =====
 var selRtype='watch';
 function gv(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
-const SUBPANELS=['step1','step_rtype','step_sub','step2','step3','form_vip','form_place','form_case','form_activity','form_border','form_org'];
+const SUBPANELS=['step1','step_rtype','step2','step3','form_vip','form_place','form_case','form_activity','form_border','form_org'];
 function showSub(id){SUBPANELS.forEach(function(s){var e=document.getElementById(s);if(e)e.style.display=(s===id?'block':'none');});window.scrollTo({top:0,behavior:'smooth'});}
 function goStep(n){showSub('step'+n);}
 function selProv(pv){selPv=pv;var t=(pv==='all')?'ทั้งหมด':pv;['pvBadge2','pvBadge3','pvBadgeR','pvBadgeVip','pvBadgePlace','pvBadgeCase','pvBadgeAct','pvBadgeBorder','pvBadgeOrg'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=t;});
   // แสดงการ์ด "สถานการณ์ชายแดน" เฉพาะเมื่อเลือกจังหวัดชายแดน หรือเลือก "ทั้งหมด"
   var bc=document.getElementById('rtcard_border');if(bc)bc.style.display=(pv==='all'||isBorderProv(pv))?'flex':'none';
   showSub('step_rtype');}
-// ประเภทที่มีเมนูย่อย → แสดงขั้นเลือกเมนูย่อยก่อนเข้าฟอร์ม (สอดคล้องกับตัวกรองในหน้า Dashboard/รายชื่อ)
-var FORM_SUB={place:{title:'ขั้นตอนที่ 2 — เลือกประเภทสถานที่',sub:'เลือกประเภทของสถานที่ที่จะบันทึก',field:'pl_type',icon:'ti-building-monument',opts:function(){return PL_TYPES;}},
-              org:{title:'ขั้นตอนที่ 2 — เลือกสถานะองค์กร',sub:'เลือกสถานะของกลุ่ม/องค์กรที่จะบันทึก',field:'org_status',icon:'ti-affiliate',opts:function(){return ORG_STATUS;}}};
-function showFormSub(t){var c=FORM_SUB[t];document.getElementById('pvBadgeSub').textContent=(selPv==='all')?'ทั้งหมด':selPv;document.getElementById('subStepTitle').innerHTML='<i class="ti '+c.icon+'" style="font-size:15px;margin-right:5px;vertical-align:-2px;"></i>'+c.title;document.getElementById('subStepSub').textContent=c.sub;document.getElementById('subStepList').innerHTML=c.opts().map(function(o,i){return '<div class="gp-row" onclick="selFormSub(\''+t+'\','+i+')"><div class="gp-num">'+(i+1)+'</div><div class="gp-txt">'+escH(o)+'</div><i class="ti ti-chevron-right gp-chev"></i></div>';}).join('');showSub('step_sub');}
-function selFormSub(t,i){var c=FORM_SUB[t];var e=document.getElementById(c.field);openForm(t);if(e)e.value=c.opts()[i];}
-function chooseRtype(t){selRtype=t;if(t==='watch'){showSub('step2');return;}if(FORM_SUB[t]){showFormSub(t);return;}openForm(t);}
-function openForm(t){var prov=(selPv==='all')?'':selPv;
+function chooseRtype(t){selRtype=t;if(t==='watch'){showSub('step2');return;}var prov=(selPv==='all')?'':selPv;
   if(t==='border'){var bs=document.getElementById('bd_pv');bs.innerHTML='<option value="">-- เลือกจังหวัดชายแดน --</option>'+BORDER_PROVS.map(function(p){return '<option'+(p===prov?' selected':'')+'>'+p+'</option>';}).join('');showSub('form_border');return;}
   var map={vip:'vip_pv',place:'place_pv','case':'case_pv',activity:'act_pv',org:'org_pv'};var sel=document.getElementById(map[t]);if(sel)sel.value=prov;showSub('form_'+t);}
 function saveBorder(){var pv=gv('bd_pv');if(!pv){gToast('กรุณาเลือกจังหวัดชายแดน');return;}var g=function(id){return gv(id);};var rec={rtype:'border',pv:pv,bd_date:g('bd_date'),bd_time:g('bd_time'),bd_loc:g('bd_loc'),bd_opposite:g('bd_opposite'),bd_distance:g('bd_distance'),bd_coord:g('bd_coord'),bd_attacker:g('bd_attacker'),bd_defender:g('bd_defender'),bd_combat:g('bd_combat'),bd_dmg_mm:g('bd_dmg_mm'),bd_dmg_th:g('bd_dmg_th'),bd_prolong:g('bd_prolong'),bd_detail:g('bd_detail')};recs.push(rec);persist();clrBorder();rList();gToast('บันทึกสถานการณ์ชายแดนแล้ว ✓');}
