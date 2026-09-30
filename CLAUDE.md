@@ -2,7 +2,7 @@
 
 ## การ deploy ขึ้น NAS (ห้ามให้คำสั่งผิดอีก)
 - โค้ดรันบน NAS UGREEN ที่ `/volume1/docker/sb1/app` (Docker, พอร์ต 8081) — **NAS ไม่มี git**
-- Mac mini มี repo ที่ `~/Personalinformation` และเป็นเครื่องเดียวที่ `git pull` ได้
+- เครื่องที่ใช้ deploy: **MacBook M5** (ผู้ใช้ย้ายมาใช้เครื่องนี้แล้ว, clone ไว้ที่ `~/Personalinformation`, ต่อ NAS ผ่าน Tailscale `100.86.87.94` ได้) — Mac mini M4 ก็มี repo ที่ path เดียวกัน
 - ขั้นตอนถูกต้อง (ผู้ใช้ยืนยันแล้ว ให้ใช้แบบนี้ทุกครั้ง) = รันบน Mac 2 บรรทัด:
   1. `cd ~/Personalinformation && git pull`
   2. `./deploy-to-nas.sh`  (ถามรหัส NAS 2 ครั้ง / ทำ tar ส่งไป NAS → `docker compose up -d --build` → ตรวจ md5 → ต้องขึ้น ✓ สำเร็จ)
