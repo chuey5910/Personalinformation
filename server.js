@@ -90,6 +90,51 @@ function audit(action, username, detail, req) {
     fs.appendFileSync(AUDIT_FILE, JSON.stringify(entry) + '\n');
   } catch (e) { console.error('audit เขียนไม่สำเร็จ:', e.message); }
 }
+// ---------- ตัดคำนำหน้าชื่อ (นาย นาง นางสาว น.ส. นส.) ออกจากช่องชื่อ ----------
+// คำนำหน้าไม่ใช่ชื่อ: ย้ายไปเก็บที่ช่อง title (ถ้าว่าง) แล้วตัดออกจากชื่อ
+// กันตัดผิด: ส่วนที่เหลือต้องขึ้นต้นด้วยพยัญชนะ/สระหน้า/ตัวอักษรละติน (เช่น "นางาม" จะไม่ถูกตัด)
+const NAME_PFX = /^(นางสาว|น\.ส\.|นส\.|นาง|นาย)\s*/;
+function splitPrefix(name) {
+  const t = String(name == null ? '' : name).trim();
+  const m = t.match(NAME_PFX);
+  if (!m) return null;
+  const rest = t.slice(m[0].length).trim();
+  if (rest.length < 2 || !/^[ก-ฮเแโใไA-Za-z]/.test(rest)) return null;
+  return { prefix: m[1], rest: rest };
+}
+function cleanRecordNames(r) {
+  if (!r || typeof r !== 'object') return false;
+  let changed = false;
+  const rt = r.rtype || 'watch';
+  if (rt === 'watch' || rt === 'vip') {
+    const p = splitPrefix(r.fn);
+    if (p) { r.fn = p.rest; if (!r.title) r.title = p.prefix; changed = true; }
+  }
+  ['persons', 'leaders'].forEach((k) => {
+    if (!Array.isArray(r[k])) return;
+    r[k].forEach((x) => {
+      if (!x || typeof x !== 'object') return;
+      ['name', 'fn'].forEach((f) => {
+        const p = splitPrefix(x[f]);
+        if (p) { x[f] = p.rest; if (!x.title) x.title = p.prefix; changed = true; }
+      });
+    });
+  });
+  return changed;
+}
+(function cleanExistingNames() {
+  let n = 0;
+  records.forEach((r) => { if (cleanRecordNames(r)) n++; });
+  if (!n) return;
+  try {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    if (fs.existsSync(RECORDS_FILE)) fs.copyFileSync(RECORDS_FILE, path.join(DATA_DIR, 'backup-before-name-cleanup-' + ts + '.json'));
+  } catch (e) { /* ignore */ }
+  saveRecords();
+  audit('clean_names', 'system', 'ตัดคำนำหน้าชื่อออกจากช่องชื่อ ' + n + ' รายการ', null);
+  console.log('  ตัดคำนำหน้าชื่อออกจากช่องชื่อ ' + n + ' รายการ (สำรองไฟล์เดิมไว้แล้ว)');
+})();
+
 function readAudit(limit) {
   try {
     const lines = fs.readFileSync(AUDIT_FILE, 'utf8').trim().split('\n');
@@ -312,6 +357,7 @@ const server = http.createServer(async (req, res) => {
       records.forEach((r, i) => { if (r && r._id) idx.set(r._id, i); });
       incoming.forEach((r) => {
         if (!r || typeof r !== 'object') return;
+        cleanRecordNames(r);
         const id = r._id ? String(r._id) : '';
         if (id && idx.has(id)) {
           // นับเฉพาะรายการที่เนื้อหาเปลี่ยนจริง (client ส่งทั้งชุดทุกครั้ง รายการที่ไม่เปลี่ยนไม่ต้องทำอะไร)
