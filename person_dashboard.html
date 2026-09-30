@@ -33,24 +33,26 @@
     --color-border-tertiary:#2c333a;
     --color-border-secondary:#3a434b;
   }
-  body{background:#101316;}
+  body{background:linear-gradient(180deg,#eef3f7 0%,#f7fafc 380px,#f7fafc 100%);}
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font-sans);background:#eef1f4;color:var(--color-text-primary);line-height:1.5;}
-.wrap{max-width:1040px;margin:0 auto;padding:0 18px 60px;}
-.appbar{background:var(--color-background-primary);border-bottom:1px solid var(--color-border-tertiary);}
-.appbar-in{max-width:1040px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.wrap{max-width:min(1760px,95vw);margin:0 auto;padding:0 clamp(10px,1.6vw,26px) 60px;}
+.appbar{background:var(--color-background-primary);border-bottom:1px solid var(--color-border-tertiary);box-shadow:0 1px 3px rgba(16,36,47,.05);position:relative;}
+.appbar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,#1D9E75,#378ADD,#7F77DD,#D4537E,#E08A1E);}
+.appbar-in{max-width:min(1760px,95vw);margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 .brand{display:flex;align-items:center;gap:11px;}
 .brand-ic{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1D9E75,#0F6E56);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;}
 .brand-tx h1{font-size:16px;font-weight:600;letter-spacing:-.01em;}
 .brand-tx p{font-size:12px;color:var(--color-text-secondary);}
 .appbar-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary);}
 .dot-live{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;}
-.card-main{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:14px;margin-top:18px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+.card-main{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:16px;margin-top:18px;padding:clamp(14px,1.5vw,24px);box-shadow:0 2px 10px rgba(16,36,47,.05);}
 @media(prefers-color-scheme:dark){body{background:#101316;}.card-main{box-shadow:none;}}
 .tabs{display:flex;border-bottom:1px solid var(--color-border-tertiary);margin-bottom:1.25rem;}
-.tb{background:none;border:none;border-bottom:2px solid transparent;padding:9px 15px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans);white-space:nowrap;}
-.tb.on{color:var(--color-text-primary);border-bottom-color:var(--color-text-primary);font-weight:600;}
+.tb{background:none;border:none;border-bottom:3px solid transparent;padding:11px 18px;font-size:13.5px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans);white-space:nowrap;border-radius:8px 8px 0 0;transition:all .15s;}
+.tb:hover{background:#eef6f3;color:#0d7a5a;}
+.tb.on{color:#0d7a5a;border-bottom-color:#1D9E75;font-weight:700;background:#eaf7f2;}
 .tb:hover:not(.on){color:var(--color-text-primary);}
 .panel{display:none;}.panel.on{display:block;}
 .step-hd{margin-bottom:14px;}
@@ -133,18 +135,29 @@ textarea{resize:vertical;min-height:50px;}
 .pvflt label{font-size:13px;color:var(--color-text-secondary);white-space:nowrap;}
 .pvflt select{font-size:13px;padding:6px 8px;border-radius:var(--border-radius-md);max-width:230px;width:auto;}
 .mg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.2rem;}
-.mc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:13px 14px;}
-.ml{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;}
-.mv{font-size:23px;font-weight:600;color:var(--color-text-primary);}
+.mc{position:relative;overflow:hidden;background:var(--mc-bg,#f3f6f8);border:1px solid var(--mc-bd,#e7ecef);border-radius:14px;padding:16px 16px 14px;transition:transform .15s,box-shadow .15s;}
+.mc:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,36,47,.10);}
+.mc::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--mc-ac,#378ADD);}
+.mc .ml i{color:var(--mc-ac,#378ADD);}
+.mc:nth-child(1){--mc-ac:#16242f;--mc-bg:linear-gradient(135deg,#eef2f5,#f7fafc);--mc-bd:#dde5ea;}
+.mc:nth-child(2){--mc-ac:#378ADD;--mc-bg:linear-gradient(135deg,#e8f2fd,#f5faff);--mc-bd:#cfe4f8;}
+.mc:nth-child(3){--mc-ac:#D4537E;--mc-bg:linear-gradient(135deg,#fdecf2,#fff6f9);--mc-bd:#f8d3e0;}
+.mc:nth-child(4){--mc-ac:#1D9E75;--mc-bg:linear-gradient(135deg,#e4f6ef,#f4fcf9);--mc-bd:#c8ebdd;}
+.mc:nth-child(5){--mc-ac:#E08A1E;--mc-bg:linear-gradient(135deg,#fdf1e0,#fffaf2);--mc-bd:#f7dfb9;}
+.mc:nth-child(6){--mc-ac:#7F77DD;--mc-bg:linear-gradient(135deg,#eeecfc,#f8f7ff);--mc-bd:#d9d5f5;}
+.mc:nth-child(7){--mc-ac:#0F7B6C;--mc-bg:linear-gradient(135deg,#e2f4f1,#f3fbfa);--mc-bd:#c3e6e0;}
+.mc:nth-child(8){--mc-ac:#E24B4A;--mc-bg:linear-gradient(135deg,#fdeaea,#fff5f5);--mc-bd:#f8cfcf;}
+.ml{font-size:12.5px;font-weight:600;color:var(--color-text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.mv{font-size:clamp(26px,2.2vw,34px);font-weight:700;line-height:1.1;color:var(--mc-ac,var(--color-text-primary));}
 .ms{font-size:11px;color:var(--color-text-tertiary);margin-top:2px;}
-.cg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.2rem;}
-.cc{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;}
-.ct{font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:9px;}
+.cg2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:clamp(12px,1.2vw,18px);margin-bottom:1.3rem;}
+.cc{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(16,36,47,.04);}
+.ct{font-size:14px;font-weight:700;color:var(--color-text-primary);margin-bottom:11px;padding-left:10px;border-left:3px solid #1D9E75;line-height:1.3;}
 .leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:7px;}
 .leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary);}
 .ld{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
 .tc{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
-.thead2{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--color-border-tertiary);gap:8px;flex-wrap:wrap;}
+.thead2{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--color-border-tertiary);gap:8px;flex-wrap:wrap;background:linear-gradient(180deg,#f7fafc,#fff);font-weight:600;}
 .thead2 span{font-size:13px;font-weight:600;}
 .exp-tools{display:flex;gap:6px;flex-wrap:wrap;}
 .exp-btn{font-size:12px;padding:6px 11px;border-radius:var(--border-radius-md);cursor:pointer;font-family:var(--font-sans);display:inline-flex;align-items:center;gap:4px;border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);}
@@ -209,7 +222,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
 .a5{background:#633806;color:#FAC775;}.a6{background:#27500A;color:#C0DD97;}
 .link{color:#5DCAA5;}
 }
-.formbanner{display:flex;justify-content:center;align-items:center;gap:22px;flex-wrap:wrap;padding:16px;margin-bottom:16px;background:#ffffff;border:1px solid var(--color-border-tertiary);border-radius:12px;}
+.formbanner{display:flex;justify-content:center;align-items:center;gap:22px;flex-wrap:wrap;padding:8px 16px;margin-bottom:16px;background:#ffffff;border:1px solid var(--color-border-tertiary);border-radius:12px;}
 .formbanner .unitimg{height:66px;width:auto;max-width:100%;}
 .formbanner img{height:78px;width:auto;max-width:100%;}
 @media(max-width:640px){.formbanner img{height:60px;}}
@@ -234,7 +247,7 @@ tbody td{font-size:13px;color:var(--color-text-primary);padding:9px 11px;overflo
 .photo-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--color-text-primary);background:var(--color-background-secondary);border:1px solid var(--color-border-secondary);border-radius:8px;padding:7px 12px;}
 .photo-btn:hover{border-color:#1D9E75;}
 .photo-clear{background:none;border:none;color:#C44;font-size:12px;cursor:pointer;}
-.mg6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.2rem;}@media(max-width:640px){.mg6{grid-template-columns:1fr 1fr;}}
+.mg6{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:clamp(10px,1vw,16px);margin-bottom:1.3rem;}@media(max-width:640px){.mg6{grid-template-columns:1fr 1fr;}}
 .dashsync{font-size:12px;color:var(--color-text-secondary);margin:0 0 10px;min-height:16px;display:flex;align-items:center;gap:5px;}
 /* ===== responsive: มือถือ/แท็บเล็ต — ห้ามล้นขอบจอ ===== */
 html,body{overflow-x:hidden;max-width:100vw;}
@@ -245,7 +258,7 @@ input,select,textarea{max-width:100%;}
 .tc{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tc table{min-width:560px;}
 .cc{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.cc div[style*="position:relative"]{min-width:480px;} /* กราฟกว้างพออ่านชื่อจังหวัด/กลุ่มได้ แล้วเลื่อนดูในกล่องตัวเอง */
+@media (max-width:980px){.cc div[style*="position:relative"]{min-width:460px;}} /* กราฟกว้างพออ่านชื่อจังหวัด/กลุ่มได้ แล้วเลื่อนดูในกล่องตัวเอง */
 .cpchk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
 .subhd{flex-wrap:wrap;row-gap:4px;}
 @media (max-width:900px){
@@ -581,20 +594,20 @@ input,select,textarea{max-width:100%;}
   <div class="pvflt"><label><i class="ti ti-map-pin" style="font-size:13px;"></i> จังหวัด</label><select id="dfltP" onchange="updDash()"><option value="">ทั้งหมด</option></select><label><i class="ti ti-clipboard-list" style="font-size:13px;"></i> ประเภท</label><select id="dfltT" onchange="updDash()"><option value="">ทุกประเภท</option><option value="watch">บุคคลเฝ้าระวัง</option><option value="vip">บุคคลสำคัญ</option><option value="place">สถานที่สำคัญ</option><option value="case">คดีสำคัญ</option><option value="activity">กิจกรรม</option><option value="border">สถานการณ์ชายแดน</option><option value="org">กลุ่ม/องค์กร</option></select><div class="sbox" style="margin-left:auto;"><i class="ti ti-search" style="font-size:13px;color:var(--color-text-tertiary);"></i><input id="dsrch" placeholder="ค้นหาชื่อ-นามสกุล (ทุกประเภท)" oninput="updDash()" style="width:210px;"></div></div>
   <div id="dashUpcoming"></div>
   <div id="dashSync" class="dashsync"></div>
-  <div class="mg6"><div class="mc"><div class="ml"><i class="ti ti-database"></i> ทั้งหมด</div><div class="mv" id="m_all">0</div><div class="ms">รายการ</div></div><div class="mc"><div class="ml"><i class="ti ti-eye"></i> บุคคลเฝ้าระวัง</div><div class="mv" id="m_watch">0</div><div class="ms">คน</div></div><div class="mc"><div class="ml"><i class="ti ti-star"></i> บุคคลสำคัญ</div><div class="mv" id="m_vip">0</div><div class="ms">คน</div></div><div class="mc"><div class="ml"><i class="ti ti-building-monument"></i> สถานที่สำคัญ</div><div class="mv" id="m_place">0</div><div class="ms">แห่ง</div></div><div class="mc"><div class="ml"><i class="ti ti-folder"></i> คดีสำคัญ</div><div class="mv" id="m_case">0</div><div class="ms">คดี</div></div><div class="mc"><div class="ml"><i class="ti ti-calendar-event"></i> กิจกรรม</div><div class="mv" id="m_act">0</div><div class="ms">งาน</div></div></div>
-  <div class="cg2"><div class="cc"><div class="ct">สัดส่วนตามประเภทข้อมูล</div><div class="leg" id="leg-t"></div><div style="position:relative;height:200px;"><canvas id="ctype"></canvas></div></div><div class="cc"><div class="ct">จำนวนข้อมูลแยกตามจังหวัด (ทุกประเภท)</div><div style="position:relative;height:560px;"><canvas id="cp"></canvas></div></div></div>
-  <div class="cc"><div class="ct">บุคคลเฝ้าระวังแยกตามกลุ่ม</div><div style="position:relative;height:620px;"><canvas id="cgrp"></canvas></div></div>
+  <div class="mg6"><div class="mc"><div class="ml"><i class="ti ti-database"></i> ทั้งหมด</div><div class="mv" id="m_all">0</div><div class="ms">รายการ</div></div><div class="mc"><div class="ml"><i class="ti ti-eye"></i> บุคคลเฝ้าระวัง</div><div class="mv" id="m_watch">0</div><div class="ms">คน</div></div><div class="mc"><div class="ml"><i class="ti ti-star"></i> บุคคลสำคัญ</div><div class="mv" id="m_vip">0</div><div class="ms">คน</div></div><div class="mc"><div class="ml"><i class="ti ti-building-monument"></i> สถานที่สำคัญ</div><div class="mv" id="m_place">0</div><div class="ms">แห่ง</div></div><div class="mc"><div class="ml"><i class="ti ti-folder"></i> คดีสำคัญ</div><div class="mv" id="m_case">0</div><div class="ms">คดี</div></div><div class="mc"><div class="ml"><i class="ti ti-calendar-event"></i> กิจกรรม</div><div class="mv" id="m_act">0</div><div class="ms">งาน</div></div><div class="mc"><div class="ml"><i class="ti ti-users-group"></i> กลุ่ม/องค์กร</div><div class="mv" id="m_org">0</div><div class="ms">กลุ่ม</div></div><div class="mc"><div class="ml"><i class="ti ti-alert-triangle"></i> สถานการณ์ชายแดน</div><div class="mv" id="m_border">0</div><div class="ms">เหตุ</div></div></div>
+  <div class="cg2"><div class="cc"><div class="ct">สัดส่วนตามประเภทข้อมูล</div><div class="leg" id="leg-t"></div><div style="position:relative;height:clamp(240px,26vh,330px);"><canvas id="ctype"></canvas></div></div><div class="cc"><div class="ct">จำนวนข้อมูลแยกตามจังหวัด (แยกสีตามประเภท)</div><div style="position:relative;height:clamp(420px,52vh,640px);"><canvas id="cp"></canvas></div></div></div>
+  <div class="cc"><div class="ct" id="ctGrp">บุคคลเฝ้าระวังแยกตามกลุ่ม</div><div id="cgrpBox" style="position:relative;height:340px;"><canvas id="cgrp"></canvas></div></div>
   <div class="cc" style="margin-top:1.2rem;"><div class="ct">รายการข้อมูลตามเงื่อนไขที่เลือก (<span id="dashCount">0</span> รายการ)</div><div id="dashListWrap"></div></div>
 </div>
 
 <div id="tab-list" class="panel">
   <div class="gscard">
     <div class="gshd" onclick="document.getElementById('gsbody').classList.toggle('show')">
-      <span class="t"><i class="ti ti-server"></i>ตั้งค่าเซิร์ฟเวอร์ (CHUEY-Server)</span>
+      <span class="t"><i class="ti ti-server"></i>ตั้งค่าเซิร์ฟเวอร์</span>
       <i class="ti ti-chevron-down" style="color:var(--color-text-tertiary);"></i>
     </div>
     <div class="gsbody" id="gsbody">
-      <div class="gshint"><i class="ti ti-info-circle"></i> ข้อมูลกลางถูกเก็บบน CHUEY-Server (ไฟล์ data/records.json) — บันทึก/แก้ไข/ลบจะซิงก์กับเซิร์ฟเวอร์อัตโนมัติ · เพิ่มข้อมูลได้ทุกเจ้าหน้าที่ที่อนุมัติแล้ว · แก้ไข/ลบได้เฉพาะ admin</div>
+      <div class="gshint"><i class="ti ti-info-circle"></i> ข้อมูลกลางถูกเก็บบน Server (ไฟล์ data/records.json) — บันทึก/แก้ไข/ลบจะซิงก์กับเซิร์ฟเวอร์อัตโนมัติ · เพิ่มข้อมูลได้ทุกเจ้าหน้าที่ที่อนุมัติแล้ว · แก้ไข/ลบได้เฉพาะ admin</div>
       <div class="gsstatus" id="gsStatus"></div>
     </div>
   </div>
@@ -638,7 +651,7 @@ input,select,textarea{max-width:100%;}
 </div>
 
 <div class="foot">
-  ข้อมูลกลางถูกเก็บบน CHUEY-Server และซิงก์อัตโนมัติเมื่อบันทึก — เข้าใช้งานได้เฉพาะเจ้าหน้าที่ที่ลงทะเบียนและได้รับอนุมัติ · แก้ไข/ลบข้อมูลได้เฉพาะ admin · ระบบบันทึกการเข้า-ออกทุกครั้ง<br>
+  ข้อมูลกลางถูกเก็บบน Server และซิงก์อัตโนมัติเมื่อบันทึก — เข้าใช้งานได้เฉพาะเจ้าหน้าที่ที่ลงทะเบียนและได้รับอนุมัติ · แก้ไข/ลบข้อมูลได้เฉพาะ admin · ระบบบันทึกการเข้า-ออกทุกครั้ง<br>
   ข้อมูลนี้มีข้อมูลส่วนบุคคลอ่อนไหว โปรดจัดเก็บอย่างปลอดภัยและปฏิบัติตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA)
 </div>
 </div>
@@ -804,12 +817,12 @@ function exportXLSX(){const rows=allFlat();if(!rows.length){gToast('ไม่ม
 function showExportPreview(){if(!isAdmin()){gToast('การส่งออกข้อมูลทำได้เฉพาะ admin');return;}var rows=allFlat();if(!rows.length){gToast('ไม่มีข้อมูลให้ส่งออก');return;}var cols=[];rows.forEach(function(r){Object.keys(r).forEach(function(k){if(cols.indexOf(k)<0)cols.push(k);});});var LIM=100;var show=rows.slice(0,LIM);var html='<table class="adm-tbl" style="min-width:'+Math.max(900,cols.length*110)+'px;"><thead><tr>'+cols.map(function(c){return '<th>'+escH(c)+'</th>';}).join('')+'</tr></thead><tbody>'+show.map(function(r){return '<tr>'+cols.map(function(c){return '<td>'+escH(r[c]==null?'':r[c])+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>';document.getElementById('expTblWrap').innerHTML=html;document.getElementById('expInfo').textContent='ทั้งหมด '+rows.length+' รายการ · '+cols.length+' คอลัมน์'+(rows.length>LIM?(' — แสดงตัวอย่าง '+LIM+' รายการแรก (ไฟล์จริงจะได้ครบทุกรายการ)'):'')+' · ตรวจสอบแล้วกดปุ่มบันทึกด้านล่าง';document.getElementById('expOverlay').classList.add('show');}
 function hideExport(){document.getElementById('expOverlay').classList.remove('show');}
 function doSaveXlsx(){exportXLSX();hideExport();}
-// ===== CHUEY-Server: ระบบผู้ใช้ + sync =====
+// ===== Server: ระบบผู้ใช้ + sync =====
 let currentUser=null;
 function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
 function apiBase(){return (location.protocol==='http:'||location.protocol==='https:')?'':null;} // เรียกเซิร์ฟเวอร์เดียวกับที่เสิร์ฟหน้านี้เสมอ
 function apiHeaders(withJson){var h={};if(withJson!==false)h['Content-Type']='application/json;charset=utf-8';return h;}
-async function api(pathname,opts){var base=apiBase();if(base===null)throw new Error('ต้องเปิดหน้านี้ผ่าน CHUEY-Server เช่น http://ไอพีเซิร์ฟเวอร์:8080/');var res=await fetch(base+pathname,opts||{});var j=null;try{j=await res.json();}catch(e){}if(res.status===401){showAuth();throw new Error((j&&j.error)||'ยังไม่ได้เข้าสู่ระบบ');}if(!j||j.ok!==true)throw new Error((j&&j.error)||('HTTP '+res.status));return j;}
+async function api(pathname,opts){var base=apiBase();if(base===null)throw new Error('ต้องเปิดหน้านี้ผ่าน Server เช่น http://ไอพีเซิร์ฟเวอร์:8080/');var res=await fetch(base+pathname,opts||{});var j=null;try{j=await res.json();}catch(e){}if(res.status===401){showAuth();throw new Error((j&&j.error)||'ยังไม่ได้เข้าสู่ระบบ');}if(!j||j.ok!==true)throw new Error((j&&j.error)||('HTTP '+res.status));return j;}
 function showAuth(){currentUser=null;setUserUI();document.getElementById('authOverlay').classList.add('show');}
 function hideAuth(){document.getElementById('authOverlay').classList.remove('show');}
 function authMode(m){document.getElementById('authLogin').style.display=(m==='login')?'block':'none';document.getElementById('authReg').style.display=(m==='reg')?'block':'none';}
@@ -830,7 +843,7 @@ async function syncServer(silent){
   try{
     const j=await api('/api/records',{method:'POST',headers:apiHeaders(),body:JSON.stringify({records:recs})});
     if(st)st.innerHTML='<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ซิงก์แล้ว — เพิ่ม '+(j.added||0)+' / แก้ไข '+(j.updated||0)+(j.skipped?(' / ข้าม '+j.skipped):'')+' · รวมบนเซิร์ฟเวอร์ '+(j.total!=null?j.total:'-')+' รายการ';
-    if(!silent)gToast('ส่งข้อมูลขึ้น CHUEY-Server แล้ว');
+    if(!silent)gToast('ส่งข้อมูลขึ้น Server แล้ว');
     if(j.skipped)gToast('การแก้ไขข้อมูลเดิม '+j.skipped+' รายการถูกข้าม — admin เท่านั้นที่แก้ไขได้');
   }catch(e){if(st)st.innerHTML='<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ส่งไม่สำเร็จ: '+e.message;if(!silent)gToast('ส่งไม่สำเร็จ: '+e.message);}
 }
@@ -857,6 +870,7 @@ async function admReject(id){if(!confirm('ลบ/ปฏิเสธบัญช�
 async function admResetPw(id,uname){var np=prompt('ตั้งรหัสผ่านใหม่ให้ "'+uname+'" (อย่างน้อย 6 ตัวอักษร)\nแจ้งรหัสนี้ให้เจ้าตัว แล้วให้เขาไปกด "เปลี่ยนรหัสผ่าน" เป็นของตัวเองหลัง login');if(np===null)return;try{await api('/api/users/resetpw',{method:'POST',headers:apiHeaders(),body:JSON.stringify({id:id,newPassword:np})});gToast('ตั้งรหัสใหม่ให้ '+uname+' แล้ว');}catch(e){gToast(e.message);}}
 var _admT=null;
 function sw(t){document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['form','dash','list','prov','admin'][i]===t));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='dash'){updDash();pullFromServer(true);}if(t==='list')rList();if(t==='prov')rProv();if(_admT){clearInterval(_admT);_admT=null;}if(t==='admin'){renderAdmin();_admT=setInterval(renderAdmin,15000);}}
+var barTotals={id:'barTotals',afterDatasetsDraw:function(chart){var ctx=chart.ctx;var tot=[];var last=[];chart.data.datasets.forEach(function(ds,di){if(chart.getDatasetMeta(di).hidden)return;chart.getDatasetMeta(di).data.forEach(function(el,i){var v=Number(ds.data[i])||0;tot[i]=(tot[i]||0)+v;if(v>0||last[i]===undefined)last[i]=el;});});ctx.save();ctx.font='700 11.5px Sarabun,sans-serif';ctx.fillStyle='#41525e';ctx.textBaseline='middle';ctx.textAlign='left';tot.forEach(function(v,i){if(!v||!last[i])return;var el=last[i];ctx.fillText(String(v),el.x+7,el.y);});ctx.restore();}};
 function mkC(id,cfg){if(typeof Chart==='undefined')return;if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 function updDash(){
   const fp=document.getElementById('dfltP').value,fg=document.getElementById('dfltG').value;
@@ -988,7 +1002,7 @@ function rProv(){var total=recs.length||1,el=document.getElementById('provlist')
 function rList(){var q=gv('srch');var fp=document.getElementById('lfltP').value;var ft=document.getElementById('lfltT')?document.getElementById('lfltT').value:'';var fg=document.getElementById('lfltG').value;var rows=recs.filter(function(r){var rt=r.rtype||'watch';var nm=((r.fn||'')+' '+(r.ln||'')).trim();if(q){return nm.indexOf(q)>=0||recTitle(r).indexOf(q)>=0;}if(ft&&rt!==ft)return false;if(fp&&r.pv!==fp)return false;if(fg&&!(rt==='watch'&&r.grp==fg))return false;return true;});document.getElementById('lcnt').textContent=rows.length;document.getElementById('ltb').innerHTML=rows.length?rows.map(function(r){var idx=recs.indexOf(r);var rt=r.rtype||'watch';return '<tr><td><div class="nc"><div class="av '+AVC[idx%AVC.length]+'"><i class="ti '+rtIcon(rt)+'"></i></div>'+recTitle(r)+'</div></td><td><span class="bge '+rtBge(rt)+'">'+rtypeLabel(rt)+'</span></td><td>'+(r.pv||'-')+'</td><td style="font-size:12px;color:var(--color-text-secondary);">'+recSummary(r)+'</td><td><span class="link" onclick="showDtl('+idx+')">ดู</span></td></tr>';}).join(''):'<tr><td colspan="5" class="enote">ไม่พบข้อมูล</td></tr>';}
 function uid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 function mergeSheetRecords(sheetRecs){var localById={};recs.forEach(function(r){if(r._id)localById[r._id]=r;});var seen={};var merged=[];sheetRecs.forEach(function(sr){if(!sr||!sr._id)return;var loc=localById[sr._id];if(loc){sr.photo=loc.photo||sr.photo;sr.keeperPhoto=loc.keeperPhoto||sr.keeperPhoto;sr.headPhoto=loc.headPhoto||sr.headPhoto;if(loc.suspects&&sr.suspects)sr.suspects.forEach(function(p,i){if(loc.suspects[i]&&loc.suspects[i].photo)p.photo=loc.suspects[i].photo;});if(loc.deceased&&sr.deceased)sr.deceased.forEach(function(p,i){if(loc.deceased[i]&&loc.deceased[i].photo)p.photo=loc.deceased[i].photo;});if(loc.victims&&sr.victims)sr.victims.forEach(function(p,i){if(loc.victims[i]&&loc.victims[i].photo)p.photo=loc.victims[i].photo;});}seen[sr._id]=true;merged.push(sr);});recs.forEach(function(r){if(!r._id||!seen[r._id])merged.push(r);});recs=merged;recs.forEach(function(r){if(!r._id)r._id=uid();});updateCount();updDash();rList();rProv();}
-async function pullFromServer(silent){if(!currentUser)return;var ds=document.getElementById('dashSync');var st=document.getElementById('gsStatus');function setStatus(html,toast){if(ds)ds.innerHTML=html;if(st&&!silent)st.innerHTML=html;if(toast&&!silent)gToast(toast);}setStatus('<i class="ti ti-loader"></i> กำลังดึงข้อมูลจาก CHUEY-Server...');try{var j=await api('/api/records?t='+Date.now(),{headers:apiHeaders(false)});var arr=j.records||[];mergeSheetRecords(arr);setStatus('<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ดึงจาก CHUEY-Server แล้ว '+arr.length+' รายการ','ดึงข้อมูลจากเซิร์ฟเวอร์แล้ว');}catch(e){setStatus('<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ดึงไม่สำเร็จ: '+e.message);}}
+async function pullFromServer(silent){if(!currentUser)return;var ds=document.getElementById('dashSync');var st=document.getElementById('gsStatus');function setStatus(html,toast){if(ds)ds.innerHTML=html;if(st&&!silent)st.innerHTML=html;if(toast&&!silent)gToast(toast);}setStatus('<i class="ti ti-loader"></i> กำลังดึงข้อมูลจาก Server...');try{var j=await api('/api/records?t='+Date.now(),{headers:apiHeaders(false)});var arr=j.records||[];mergeSheetRecords(arr);setStatus('<i class="ti ti-circle-check" style="color:#1D9E75;"></i> ดึงจาก Server แล้ว '+arr.length+' รายการ','ดึงข้อมูลจากเซิร์ฟเวอร์แล้ว');}catch(e){setStatus('<i class="ti ti-alert-triangle" style="color:#D85A30;"></i> ดึงไม่สำเร็จ: '+e.message);}}
 function getVeh(p){return {car:{brand:gv(p+'_car_brand'),color:gv(p+'_car_color'),plate:gv(p+'_car_plate'),prov:gv(p+'_car_prov')},mc:{brand:gv(p+'_mc_brand'),color:gv(p+'_mc_color'),plate:gv(p+'_mc_plate'),prov:gv(p+'_mc_prov')}};}
 function clrVeh(p){['_car_brand','_car_color','_car_plate','_car_prov','_mc_brand','_mc_color','_mc_plate','_mc_prov'].forEach(function(suf){var e=document.getElementById(p+suf);if(e)e.value='';});}
 function vehLine(o){o=o||{};var p=[];if(o.brand)p.push(o.brand);if(o.color)p.push('สี '+o.color);if(o.plate)p.push('ทะเบียน '+o.plate);if(o.prov)p.push('จ.'+o.prov);return p.join(' · ');}
@@ -1014,7 +1028,7 @@ function v1Str(list,label){return (list||[]).map(function(o){var s=v1Line(o);ret
 // ===== end extension =====
 
 function renderDashList(data){var wrap=document.getElementById('dashListWrap');var dc=document.getElementById('dashCount');if(dc)dc.textContent=data.length;if(!wrap)return;if(!data.length){wrap.innerHTML='<div class="enote">ไม่มีข้อมูลตามเงื่อนไขที่เลือก</div>';return;}wrap.innerHTML='<div class="tc"><table><thead><tr><th style="width:180px;">ชื่อ / หัวข้อ</th><th style="width:110px;">ประเภท</th><th style="width:96px;">จังหวัด</th><th>รายละเอียด</th><th style="width:46px;"></th></tr></thead><tbody>'+data.map(function(r){var idx=recs.indexOf(r);var rt=r.rtype||'watch';return '<tr><td><div class="nc"><div class="av '+AVC[idx%AVC.length]+'"><i class="ti '+rtIcon(rt)+'"></i></div>'+recTitle(r)+'</div></td><td><span class="bge '+rtBge(rt)+'">'+rtypeLabel(rt)+'</span></td><td>'+(r.pv||'-')+'</td><td style="font-size:12px;color:var(--color-text-secondary);">'+recSummary(r)+'</td><td><span class="link" onclick="showDtl('+idx+')">ดู</span></td></tr>';}).join('')+'</tbody></table></div>';}
-function updDash(){var fp=document.getElementById('dfltP').value;var ft=(document.getElementById('dfltT')||{}).value||'';var q=gv('dsrch');var byProv=recs.filter(function(r){return (!fp||r.pv===fp);});function cnt(t){return byProv.filter(function(r){return (r.rtype||'watch')===t;}).length;}var setTxt=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};setTxt('m_all',byProv.length);setTxt('m_watch',cnt('watch'));setTxt('m_vip',cnt('vip'));setTxt('m_place',cnt('place'));setTxt('m_case',cnt('case'));setTxt('m_act',cnt('activity'));var types=[['watch','บุคคลเฝ้าระวัง','#378ADD'],['vip','บุคคลสำคัญ','#D4537E'],['place','สถานที่สำคัญ','#1D9E75'],['case','คดีสำคัญ','#E08A1E'],['activity','กิจกรรม','#7F77DD'],['border','สถานการณ์ชายแดน','#E24B4A'],['org','กลุ่ม/องค์กร','#0F7B6C']];var tD=types.map(function(t){return cnt(t[0]);}),tC=types.map(function(t){return t[2];}),tL=types.map(function(t){return t[1];});var legt=document.getElementById('leg-t');if(legt)legt.innerHTML=types.map(function(t,i){return '<span><span class="ld" style="background:'+t[2]+';"></span>'+t[1]+' '+tD[i]+'</span>';}).join('');mkC('ctype',{type:'doughnut',data:{labels:tL,datasets:[{data:tD,backgroundColor:tC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});var baseT=byProv.filter(function(r){return (!ft||(r.rtype||'watch')===ft);});var pvC={};P17.forEach(function(p){pvC[p]=0;});baseT.forEach(function(r){if(r.pv&&pvC[r.pv]!==undefined)pvC[r.pv]++;});var pvL=fp?[fp]:P17,pvD=pvL.map(function(p){return pvC[p]||0;});mkC('cp',{type:'bar',data:{labels:pvL,datasets:[{label:'จำนวน',data:pvD,backgroundColor:'#1D9E75',borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(128,128,128,0.1)'},ticks:{stepSize:1,precision:0,font:{size:11},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:11},color:'#888'}}}}});var watchSet=byProv.filter(function(r){return (r.rtype||'watch')==='watch';});var grpC={};GRPS.forEach(function(g){grpC[g.id]=0;});watchSet.forEach(function(r){if(r.grp&&grpC[r.grp]!==undefined)grpC[r.grp]++;});var grpL=GRPS.map(function(g){return g.id+'. '+(g.name.length>26?g.name.slice(0,26)+'…':g.name);}),grpD=GRPS.map(function(g){return grpC[g.id]||0;});mkC('cgrp',{type:'bar',data:{labels:grpL,datasets:[{label:'จำนวนคน',data:grpD,backgroundColor:'#7F77DD',borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(128,128,128,0.1)'},ticks:{stepSize:1,precision:0,font:{size:11},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:11},color:'#888'}}}}});var listData=baseT.filter(function(r){if(!q)return true;var nm=((r.fn||'')+' '+(r.ln||'')).trim();return nm.indexOf(q)>=0||recTitle(r).indexOf(q)>=0;});renderDashList(listData);renderUpcoming();}
+function updDash(){var fp=document.getElementById('dfltP').value;var ft=(document.getElementById('dfltT')||{}).value||'';var q=gv('dsrch');var byProv=recs.filter(function(r){return (!fp||r.pv===fp);});function cnt(t){return byProv.filter(function(r){return (r.rtype||'watch')===t;}).length;}var setTxt=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};setTxt('m_all',byProv.length);setTxt('m_watch',cnt('watch'));setTxt('m_vip',cnt('vip'));setTxt('m_place',cnt('place'));setTxt('m_case',cnt('case'));setTxt('m_act',cnt('activity'));setTxt('m_org',cnt('org'));setTxt('m_border',cnt('border'));var types=[['watch','บุคคลเฝ้าระวัง','#378ADD'],['vip','บุคคลสำคัญ','#D4537E'],['place','สถานที่สำคัญ','#1D9E75'],['case','คดีสำคัญ','#E08A1E'],['activity','กิจกรรม','#7F77DD'],['border','สถานการณ์ชายแดน','#E24B4A'],['org','กลุ่ม/องค์กร','#0F7B6C']];var tD=types.map(function(t){return cnt(t[0]);}),tC=types.map(function(t){return t[2];}),tL=types.map(function(t){return t[1];});var legt=document.getElementById('leg-t');if(legt)legt.innerHTML=types.map(function(t,i){return '<span><span class="ld" style="background:'+t[2]+';"></span>'+t[1]+' '+tD[i]+'</span>';}).join('');mkC('ctype',{type:'doughnut',data:{labels:tL,datasets:[{data:tD,backgroundColor:tC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});var baseT=byProv.filter(function(r){return (!ft||(r.rtype||'watch')===ft);});var pvTot={};P17.forEach(function(p){pvTot[p]=0;});baseT.forEach(function(r){if(r.pv&&pvTot[r.pv]!==undefined)pvTot[r.pv]++;});var pvL=(fp?[fp]:P17.filter(function(p){return pvTot[p]>0;})).sort(function(a,b){return pvTot[b]-pvTot[a];});var pvSets=types.filter(function(t){return !ft||t[0]===ft;}).map(function(t){return {label:t[1],backgroundColor:t[2],borderWidth:0,borderRadius:3,data:pvL.map(function(p){return byProv.filter(function(r){return r.pv===p&&(r.rtype||'watch')===t[0];}).length;})};}).filter(function(d){return d.data.some(function(v){return v>0;});});mkC('cp',{type:'bar',data:{labels:pvL,datasets:pvSets},plugins:[barTotals],options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:34}},plugins:{legend:{display:true,position:'top',labels:{boxWidth:11,boxHeight:11,font:{size:11.5},padding:10,usePointStyle:true,pointStyle:'rectRounded'}},tooltip:{mode:'index',intersect:false}},scales:{x:{stacked:true,beginAtZero:true,grid:{color:'rgba(128,128,128,0.08)'},ticks:{precision:0,font:{size:11},color:'#93a1ac'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:12},color:'#41525e'}}}}});var watchSet=byProv.filter(function(r){return (r.rtype||'watch')==='watch';});var grpC={};GRPS.forEach(function(g){grpC[g.id]=0;});watchSet.forEach(function(r){if(r.grp&&grpC[r.grp]!==undefined)grpC[r.grp]++;});var gUsed=GRPS.filter(function(g){return grpC[g.id]>0;}).sort(function(a,b){return grpC[b.id]-grpC[a.id];});if(!gUsed.length)gUsed=GRPS.slice(0,1);var grpL=gUsed.map(function(g){return g.id+'. '+(g.name.length>34?g.name.slice(0,34)+'…':g.name);}),grpD=gUsed.map(function(g){return grpC[g.id]||0;});var gTitle=document.getElementById('ctGrp');if(gTitle)gTitle.textContent='บุคคลเฝ้าระวังแยกตามกลุ่ม ('+gUsed.length+' กลุ่มที่มีข้อมูล จาก 15 กลุ่ม)';var gBox=document.getElementById('cgrpBox');if(gBox)gBox.style.height=Math.max(180,gUsed.length*46+40)+'px';mkC('cgrp',{type:'bar',data:{labels:grpL,datasets:[{label:'จำนวนคน',data:grpD,backgroundColor:'#7F77DD',borderRadius:5,borderWidth:0}]},plugins:[barTotals],options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:36}},plugins:{legend:{display:false},tooltip:{intersect:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(128,128,128,0.08)'},ticks:{precision:0,font:{size:11},color:'#93a1ac'}},y:{grid:{display:false},ticks:{font:{size:12},color:'#41525e'}}}}});var listData=baseT.filter(function(r){if(!q)return true;var nm=((r.fn||'')+' '+(r.ln||'')).trim();return nm.indexOf(q)>=0||recTitle(r).indexOf(q)>=0;});if(!fp&&!ft&&!q){var _w=document.getElementById('dashListWrap');var _c=document.getElementById('dashCount');if(_c)_c.textContent='0';if(_w)_w.innerHTML='<div class="enote" style="padding:26px 16px;text-align:center;"><i class="ti ti-filter-search" style="font-size:26px;color:var(--color-text-tertiary);display:block;margin-bottom:8px;"></i>เลือกจังหวัด เลือกประเภท หรือพิมพ์คำค้นหา เพื่อแสดงรายการข้อมูล</div>';}else renderDashList(listData);renderUpcoming();}
 loadState();initUI();initExtra();updateCount();updDash();rList();rProv();authMode('login');checkAuth();
 </script>
 </body>

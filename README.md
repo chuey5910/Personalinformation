@@ -1,7 +1,7 @@
-# SB1 Web App — เก็บข้อมูลบน CHUEY-Server (มีระบบผู้ใช้ + audit log)
+# SB1 Web App — เก็บข้อมูลบน Server (มีระบบผู้ใช้ + audit log)
 
 ระบบจัดเก็บข้อมูลภาษาไทยของ Special Branch 1 (สบ.1) ครอบคลุม 17 จังหวัดภาคเหนือ
-ข้อมูลกลางเก็บบน **CHUEY-Server** (ไม่ใช้ Google Sheets แล้ว) — เจ้าหน้าที่หลายจังหวัดใช้งานร่วมกันผ่านเบราว์เซอร์ โดยต้อง **ลงทะเบียนและได้รับอนุมัติก่อน** จึงจะเข้าใช้ได้
+ข้อมูลกลางเก็บบน **Server** (ไม่ใช้ Google Sheets แล้ว) — เจ้าหน้าที่หลายจังหวัดใช้งานร่วมกันผ่านเบราว์เซอร์ โดยต้อง **ลงทะเบียนและได้รับอนุมัติก่อน** จึงจะเข้าใช้ได้
 
 ## กติกาสิทธิ์การใช้งาน
 
@@ -18,7 +18,7 @@
 ## ไฟล์ในโปรเจกต์
 
 - `person_dashboard.html` — ตัว web app ทั้งหมด (มีหน้า login/ลงทะเบียน + แท็บจัดการระบบสำหรับ admin ในตัว)
-- `server.js` — backend บน CHUEY-Server (Node.js ล้วน **ไม่ต้อง npm install**): เสิร์ฟหน้าเว็บ + API + ระบบผู้ใช้/session + audit log
+- `server.js` — backend บน Server (Node.js ล้วน **ไม่ต้อง npm install**): เสิร์ฟหน้าเว็บ + API + ระบบผู้ใช้/session + audit log
 - `assets/` — ไลบรารีและฟอนต์ทั้งหมด (Chart.js, SheetJS, Tabler icons, ฟอนต์ Sarabun, ฐานข้อมูลจังหวัด/อำเภอ/ตำบล+รหัสไปรษณีย์ 77 จังหวัด) เสิร์ฟจากเซิร์ฟเวอร์เอง — **ระบบทำงานได้เต็มรูปแบบแม้เครือข่ายภายในไม่มีอินเทอร์เน็ต**
 - `setup-macos-service.sh` — สคริปต์ติดตั้งเป็น service บน macOS (รันเบื้องหลัง ปิดหน้าต่าง Terminal ได้)
 - `Dockerfile` / `docker-compose.yml` — สำหรับรันบน NAS (UGREEN DXP4800 Plus) หรือเครื่องใดก็ได้ที่มี Docker
@@ -30,7 +30,7 @@
   - `audit.log` บันทึกการใช้งาน (JSON ต่อบรรทัด)
   - `backup-YYYYMMDD.json` สำรองข้อมูลอัตโนมัติวันละครั้ง
 
-## วิธีติดตั้งบน CHUEY-Server
+## วิธีติดตั้งบน Server
 
 ต้องมี Node.js 18 ขึ้นไป (`node -v` เพื่อตรวจ)
 
@@ -171,7 +171,7 @@ ADMIN_USER=admin ADMIN_PASS=รหัสผ่านของคุณ node serv
 
 ```ini
 [Unit]
-Description=SB1 Web App (CHUEY-Server)
+Description=SB1 Web App (Server)
 After=network.target
 
 [Service]
@@ -193,7 +193,7 @@ sudo systemctl enable --now sb1
 ## สถาปัตยกรรม
 
 ```
-[เบราว์เซอร์เจ้าหน้าที่ 17 จังหวัด] -- login (cookie session) --> [server.js บน CHUEY-Server]
+[เบราว์เซอร์เจ้าหน้าที่ 17 จังหวัด] -- login (cookie session) --> [server.js บน Server]
         person_dashboard.html            fetch GET/POST                 |-- data/records.json
         (ไม่เก็บข้อมูลใน localStorage)                                  |-- data/users.json
                                                                         |-- data/audit.log

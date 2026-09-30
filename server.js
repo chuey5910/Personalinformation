@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CHUEY-Server backend สำหรับ person_dashboard.html (SB1)
+ * Server backend สำหรับ person_dashboard.html (SB1)
  * ใช้ Node.js อย่างเดียว ไม่ต้องติดตั้ง dependency ใด ๆ (ไม่ต้อง npm install)
  *
  * รัน:            node server.js                       (พอร์ตเริ่มต้น 8080)
@@ -406,7 +406,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log('SB1 CHUEY-Server พร้อมใช้งาน');
+  console.log('SB1 Server พร้อมใช้งาน');
   console.log('  หน้าเว็บ:  http://' + (HOST === '0.0.0.0' ? '<server-ip>' : HOST) + ':' + PORT + '/');
   console.log('  ข้อมูล:    ' + RECORDS_FILE + ' (ตอนนี้ ' + records.length + ' รายการ)');
   console.log('  ผู้ใช้:    ' + users.length + ' บัญชี (admin: ' + users.filter((u) => u.role === 'admin').length + ')');
