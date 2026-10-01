@@ -150,6 +150,8 @@ function readAudit(limit) {
 function hashPassword(password, salt) {
   return crypto.scryptSync(String(password), salt, 32).toString('hex');
 }
+// จังหวัด หรือ โต๊ะข่าว (โต๊ะข่าวไม่ต้องขึ้นต้นด้วย จ.)
+function provLabel(p) { p = String(p || '').trim(); if (!p) return ''; return p.indexOf('โต๊ะข่าว') === 0 ? p : 'จ.' + p; }
 function newUser(username, password, name, prov, role, status) {
   const salt = crypto.randomBytes(16).toString('hex');
   return {
@@ -290,7 +292,7 @@ const server = http.createServer(async (req, res) => {
       if (findUser(username)) { sendJSON(res, 400, { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้แล้ว' }); return; }
       const u = newUser(username, password, d.name, d.prov, 'officer', 'pending');
       users.push(u); saveUsers();
-      audit('register', username, 'สมัครสมาชิก (' + (u.name || '') + (u.prov ? ' จ.' + u.prov : '') + ') — รออนุมัติ', req);
+      audit('register', username, 'สมัครสมาชิก (' + (u.name || '') + (u.prov ? ' ' + provLabel(u.prov) : '') + ') — รออนุมัติ', req);
       sendJSON(res, 200, { ok: true, message: 'สมัครแล้ว — รอ admin อนุมัติก่อนจึงจะเข้าใช้งานได้' }); return;
     }
 
@@ -420,8 +422,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ----- admin เท่านั้น -----
-    if (url.pathname === '/api/users' || url.pathname === '/api/users/approve' || url.pathname === '/api/users/reject' || url.pathname === '/api/users/resetpw' || url.pathname === '/api/audit') {
+    if (url.pathname === '/api/users' || url.pathname === '/api/users/approve' || url.pathname === '/api/users/reject' || url.pathname === '/api/users/resetpw' || url.pathname === '/api/users/update' || url.pathname === '/api/audit') {
       if (!isAdmin) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้น' }); return; }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/users/update') {
+      const d = JSON.parse(await readBody(req) || '{}');
+      const u = users.find((x) => x.id === d.id);
+      if (!u) { sendJSON(res, 404, { ok: false, error: 'ไม่พบผู้ใช้' }); return; }
+      const name = String(d.name == null ? u.name : d.name).trim().slice(0, 120);
+      const prov = String(d.prov == null ? u.prov : d.prov).trim().slice(0, 60);
+      if (!name) { sendJSON(res, 400, { ok: false, error: 'กรุณากรอกชื่อ-สกุล' }); return; }
+      const before = (u.name || '') + ' / ' + (provLabel(u.prov) || '-');
+      u.name = name; u.prov = prov;
+      saveUsers();
+      audit('admin_update_user', me.username, 'แก้ไขข้อมูลผู้ใช้ ' + u.username + ': ' + before + ' → ' + name + ' / ' + (provLabel(prov) || '-'), req);
+      sendJSON(res, 200, { ok: true, user: publicUser(u) }); return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/users/resetpw') {
