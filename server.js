@@ -205,7 +205,7 @@ function findUser(username) {
   return users.find((x) => x.username.toLowerCase() === u);
 }
 function publicUser(u) {
-  return { id: u.id, username: u.username, name: u.name, prov: u.prov, role: u.role, status: u.status, createdAt: u.createdAt };
+  return { id: u.id, username: u.username, name: u.name, prov: u.prov, role: u.role, reqRole: u.reqRole || '', status: u.status, createdAt: u.createdAt };
 }
 
 // สร้าง admin คนแรกจาก environment variable — ถ้ามีบัญชีนี้อยู่แล้วจะ "รีเซ็ตรหัสผ่าน" ให้แทน
@@ -324,9 +324,14 @@ const server = http.createServer(async (req, res) => {
       if (password.length < 6) { sendJSON(res, 400, { ok: false, error: 'รหัสผ่านต้องยาวอย่างน้อย 6 ตัวอักษร' }); return; }
       if (!String(d.name || '').trim()) { sendJSON(res, 400, { ok: false, error: 'กรุณากรอกชื่อ-สกุล' }); return; }
       if (findUser(username)) { sendJSON(res, 400, { ok: false, error: 'ชื่อผู้ใช้นี้ถูกใช้แล้ว' }); return; }
-      const u = newUser(username, password, d.name, d.prov, 'officer', 'pending');
+      // ตำแหน่งที่เลือกตอนสมัคร: "หน.ส.จว.<จังหวัด>" / "หัวหน้าโต๊ะข่าว กก." → เก็บเป็นสิทธิ์ที่ขอ (reqRole) รอแอดมินอนุมัติ สิทธิ์จริงยังเป็นเจ้าหน้าที่
+      let prov = String(d.prov || '').trim(), reqRole = 'officer';
+      if (prov.indexOf('หน.ส.จว.') === 0) { reqRole = 'prov_head'; prov = prov.slice('หน.ส.จว.'.length).trim(); }
+      else if (prov.indexOf('หัวหน้าโต๊ะข่าว') === 0) { reqRole = 'desk_head'; prov = ''; }
+      const u = newUser(username, password, d.name, prov, 'officer', 'pending');
+      u.reqRole = reqRole;
       users.push(u); saveUsers();
-      audit('register', username, 'สมัครสมาชิก (' + (u.name || '') + (u.prov ? ' ' + provLabel(u.prov) : '') + ') — รออนุมัติ', req);
+      audit('register', username, 'สมัครสมาชิก (' + (u.name || '') + (u.prov ? ' ' + provLabel(u.prov) : '') + (reqRole !== 'officer' ? ' ขอสิทธิ์ ' + reqRole : '') + ') — รออนุมัติ', req);
       sendJSON(res, 200, { ok: true, message: 'สมัครแล้ว — รอ admin อนุมัติก่อนจึงจะเข้าใช้งานได้' }); return;
     }
 
