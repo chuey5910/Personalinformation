@@ -585,7 +585,7 @@ td:last-child .rowbtns{min-width:max-content;}
 <p class="sec"><i class="ti ti-building-monument"></i>ข้อมูลสถานที่</p>
 <div class="fg"><div class="fl"><label>จังหวัด</label><select id="place_pv"></select></div><div class="fl"><label>ชื่อสถานที่</label><input id="pl_name"></div></div>
 <p class="sec"><i class="ti ti-building-church"></i>ประเภทสถานที่ / ทะเบียน</p>
-<div class="fg3"><div class="fl"><label>ประเภทสถานที่</label><select id="pl_type"><option value="">-</option><option>มัสยิด</option><option>สุเหร่า</option><option>วัด</option><option>โบสถ์คริสต์</option><option>สำนักสงฆ์</option><option>ศาลเจ้า</option><option>สถานที่ราชการ</option><option>สถานที่สำคัญอื่นๆ</option></select></div><div class="fl"><label>นิกาย / สาย</label><input id="pl_sect" placeholder="เช่น ซุนนี (Sunni)"></div><div class="fl"><label>เลขทะเบียน</label><input id="pl_regNo"></div></div>
+<div class="fg3"><div class="fl"><label>ประเภทสถานที่</label><select id="pl_type"><option value="">-</option><option>มัสยิด</option><option>สุเหร่า</option><option>วัด</option><option>โบสถ์คริสต์</option><option>สำนักสงฆ์</option><option>ศาลเจ้า</option><option>ชาบัด (Chabad)</option><option>สถานที่ราชการ</option><option>สถานที่สำคัญอื่นๆ</option></select></div><div class="fl"><label>นิกาย / สาย</label><input id="pl_sect" placeholder="เช่น ซุนนี (Sunni)"></div><div class="fl"><label>เลขทะเบียน</label><input id="pl_regNo"></div></div>
 <div class="fg" style="margin-top:8px;"><div class="fl"><label>พิกัด (ละติจูด, ลองจิจูด)</label><input id="pl_coord" placeholder="เช่น 16.51618, 99.55491"></div><div class="fl"><label>ช่องทางโซเชียล (So.)</label><input id="pl_social" placeholder="Facebook / Line / อื่นๆ"></div></div>
 <p class="sec"><i class="ti ti-map-pin"></i>ที่อยู่สถานที่</p><div class="addrcard"><div class="addr-grid" id="addr_plmain"></div></div>
 <p class="sec"><i class="ti ti-user-star"></i>ผู้นำศาสนา / ผู้มีบทบาท</p>
@@ -1090,8 +1090,8 @@ function showPerson(ids){var rt0=(recs[ids[0]]||{}).rtype||'watch';if(rt0!=='wat
 // - เลขบัตรตรงกัน = ยืนยัน; ชื่อ-สกุลตรงกัน+จังหวัดเดียวกัน = "ยังไม่ยืนยัน"
 // ======================================================================
 var RELIG_ROLES=[['โต๊ะอิหม่าม',/อิหม่าม/],['คอเต็บ',/คอเต็บ/],['บิลาล',/บิลาล/]];
-var RELIG_PL=['วัด','โบสถ์คริสต์','สำนักสงฆ์','ศาลเจ้า'];
-var VIP_SUBS=['โต๊ะอิหม่าม','คอเต็บ','บิลาล','ผู้นำวัด','ผู้นำโบสถ์คริสต์','ผู้นำสำนักสงฆ์','ผู้นำศาลเจ้า'];
+var RELIG_PL=['วัด','โบสถ์คริสต์','สำนักสงฆ์','ศาลเจ้า','ชาบัด (Chabad)'];
+var VIP_SUBS=['โต๊ะอิหม่าม','คอเต็บ','บิลาล','ผู้นำวัด','ผู้นำโบสถ์คริสต์','ผู้นำสำนักสงฆ์','ผู้นำศาลเจ้า','ผู้นำชาบัด (Chabad)'];
 function leaderVipRole(pl,l){var role=String((l&&l.role)||'');for(var i=0;i<RELIG_ROLES.length;i++)if(RELIG_ROLES[i][1].test(role))return RELIG_ROLES[i][0];if(RELIG_PL.indexOf(pl.pl_type||'')>=0)return 'ผู้นำ'+pl.pl_type;return '';}
 function splitName(n){var t=noPfx(String(n||'').replace(/[(（][^)）]*[)）]/g,' ')).split(/\s+/).filter(Boolean);return {fn:t[0]||'',ln:t.slice(1).join(' ')};}
 function nidOf(x){return String((x&&x.nid)||'').replace(/\D/g,'');}
@@ -1221,7 +1221,7 @@ function rProv(){var el=document.getElementById('provlist');if(!el)return;var to
  else{document.getElementById('provTitle').textContent='จำนวนข้อมูลแยกตามประเภท';var types=[['watch','บุคคลเฝ้าระวัง'],['vip','บุคคลสำคัญ'],['place','สถานที่สำคัญ'],['case','คดีสำคัญ'],['activity','กิจกรรม']];var c={};types.forEach(function(t){c[t[0]]=0;});recs.forEach(function(r){var rt=r.rtype||'watch';if(c[rt]!==undefined)c[rt]++;});var max=Math.max.apply(null,types.map(function(t){return c[t[0]];}).concat([1]));el.innerHTML=types.map(function(t){var v=c[t[0]],pct=Math.round(v/total*100);return '<div class="prow"><span class="pname">'+t[1]+'</span><div class="pbw"><div class="pbf" style="width:'+Math.round(v/max*100)+'%;background:#378ADD;"></div></div><span class="pnum">'+v+'</span><span class="ppct">'+pct+'%</span></div>';}).join('');}
 }
 // เมนูย่อยของตัวกรอง เปลี่ยนตามประเภทที่เลือก (ใช้ทั้งหน้า Dashboard และ รายชื่อ)
-var PL_TYPES=['มัสยิด','สุเหร่า','วัด','โบสถ์คริสต์','สำนักสงฆ์','ศาลเจ้า','สถานที่ราชการ','สถานที่สำคัญอื่นๆ'];
+var PL_TYPES=['มัสยิด','สุเหร่า','วัด','โบสถ์คริสต์','สำนักสงฆ์','ศาลเจ้า','ชาบัด (Chabad)','สถานที่ราชการ','สถานที่สำคัญอื่นๆ'];
 var ORG_STATUS=['มูลนิธิ','สมาคม','กลุ่มอิสระ / เครือข่ายไม่จดทะเบียน','กลุ่มปัญหาในพื้นที่','อื่นๆ'];
 function subFilterCfg(rt){
   if(rt==='vip')return {label:'ประเภทบุคคลสำคัญ',all:'ทุกประเภทบุคคลสำคัญ',field:'vip_role',icon:'ti-star',opts:[['__direct','บันทึกเป็นบุคคลสำคัญโดยตรง']].concat(VIP_SUBS.map(function(v){return [v,v];}))};
