@@ -78,6 +78,40 @@ function saveUsers() { writeJSON(USERS_FILE, { users: users }); }
 function saveSessions() { writeJSON(SESSIONS_FILE, sessions); }
 function saveLinks() { writeJSON(LINKS_FILE, { updatedAt: new Date().toISOString(), links: links }); }
 
+// ---------- ระดับสิทธิ์และการยืนยันข้อมูล ----------
+//   officer    เจ้าหน้าที่        บันทึกได้ → เข้าสถานะ "รอยืนยัน" / แก้ไขข้อมูลที่ยืนยันแล้ว → เป็น "ฉบับแก้ไขรอยืนยัน"
+//   prov_head  หน.ส.จว.          ยืนยัน/ส่งกลับ ได้เฉพาะจังหวัดที่ประจำการ (ข้อมูลที่ตนเองบันทึกในจังหวัดตนเอง ไม่ต้องรอยืนยัน)
+//   desk_head  หัวหน้าโต๊ะข่าว กก. ยืนยัน/ส่งกลับ ได้ทุกจังหวัด + ตรวจสอบบุคคลซ้ำ (ลบไม่ได้)
+//   admin      แอดมิน             ทุกอย่าง
+// สถานะข้อมูล (_status): 'verified' ใช้งาน/ค้นหาได้ · 'pending' รอยืนยัน · 'returned' ส่งกลับแก้ไข
+const ROLES = ['admin', 'desk_head', 'prov_head', 'officer'];
+const META = ['_status', '_verifiedBy', '_verifiedAt', '_edit', '_return', '_createdAt'];
+function isVerifier(u) { return u.role === 'admin' || u.role === 'desk_head' || u.role === 'prov_head'; }
+function canVerifyRec(u, r) { if (u.role === 'admin' || u.role === 'desk_head') return true; if (u.role === 'prov_head') return String(r.pv || '') === String(u.prov || ''); return false; }
+function stripMeta(r) { const o = {}; Object.keys(r || {}).forEach((k) => { if (META.indexOf(k) < 0) o[k] = r[k]; }); return o; }
+function copyMeta(from, to) { META.forEach((k) => { if (from[k] !== undefined) to[k] = from[k]; else delete to[k]; }); }
+function visibleTo(u, r) {
+  if (!r) return false;
+  if (u.role === 'admin' || u.role === 'desk_head') return true;
+  const st = r._status || 'verified';
+  if (st === 'verified') return true;
+  if (r._createdBy === u.username) return true;
+  if (u.role === 'prov_head' && String(r.pv || '') === String(u.prov || '')) return true;
+  return false;
+}
+function viewOf(u, r) {
+  // ฉบับแก้ไขรอยืนยัน เห็นได้เฉพาะผู้ตรวจที่มีสิทธิ์ และผู้ที่ส่งแก้ไข
+  if (r._edit && !(canVerifyRec(u, r) || r._edit.by === u.username)) { const o = Object.assign({}, r); delete o._edit; return o; }
+  return r;
+}
+function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; return r._id || ''; }
+// ข้อมูลเดิมทั้งหมดถือว่ายืนยันแล้ว (ตามที่ admin ตกลง) — เติมสถานะให้ครั้งเดียว
+(function markExistingVerified() {
+  let n = 0;
+  records.forEach((r) => { if (r && !r._status) { r._status = 'verified'; r._verifiedBy = r._verifiedBy || 'ข้อมูลเดิม'; n++; } });
+  if (n) { saveRecords(); audit('mark_verified', 'system', 'ตั้งสถานะยืนยันแล้วให้ข้อมูลเดิม ' + n + ' รายการ (เริ่มใช้ระบบตรวจยืนยัน)', null); }
+})();
+
 // ---------- audit log (บันทึกการเข้าออก/การกระทำ ทุกครั้ง) ----------
 
 function audit(action, username, detail, req) {
@@ -159,7 +193,7 @@ function newUser(username, password, name, prov, role, status) {
     username: String(username).trim(),
     name: String(name || '').trim(),
     prov: String(prov || '').trim(),
-    role: role,           // 'admin' | 'officer'
+    role: role,           // 'admin' | 'desk_head' (หัวหน้าโต๊ะข่าว กก.) | 'prov_head' (หน.ส.จว.) | 'officer'
     status: status,       // 'approved' | 'pending'
     salt: salt,
     hash: hashPassword(password, salt),
@@ -351,35 +385,71 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/records') {
-      sendJSON(res, 200, { ok: true, records: records }); return;
+      sendJSON(res, 200, { ok: true, records: records.filter((r) => visibleTo(me, r)).map((r) => viewOf(me, r)) }); return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/records') {
       const data = JSON.parse(await readBody(req) || '{}');
       const incoming = Array.isArray(data.records) ? data.records : [];
-      let added = 0, updated = 0, skipped = 0;
+      let added = 0, updated = 0, skipped = 0, pending = 0, pendingEdit = 0;
       const idx = new Map();
       records.forEach((r, i) => { if (r && r._id) idx.set(r._id, i); });
+      const now = new Date().toISOString();
       incoming.forEach((r) => {
         if (!r || typeof r !== 'object') return;
         cleanRecordNames(r);
         const id = r._id ? String(r._id) : '';
         if (id && idx.has(id)) {
-          // นับเฉพาะรายการที่เนื้อหาเปลี่ยนจริง (client ส่งทั้งชุดทุกครั้ง รายการที่ไม่เปลี่ยนไม่ต้องทำอะไร)
-          const changed = JSON.stringify(records[idx.get(id)]) !== JSON.stringify(r);
+          const ex = records[idx.get(id)];
+          // นับเฉพาะรายการที่เนื้อหาเปลี่ยนจริง (ไม่นับช่องสถานะ/การยืนยันที่เซิร์ฟเวอร์เป็นผู้กำหนด)
+          const changed = JSON.stringify(stripMeta(ex)) !== JSON.stringify(stripMeta(r));
           if (!changed) return;
-          if (isAdmin) { records[idx.get(id)] = r; updated++; }
-          else skipped++; // officer แก้ไขข้อมูลเดิมไม่ได้
+          const st = ex._status || 'verified';
+          if (canVerifyRec(me, ex)) {            // ผู้ตรวจ/แอดมิน แก้ได้ตรง ๆ (สถานะคงเดิม)
+            copyMeta(ex, r); records[idx.get(id)] = r; updated++;
+          } else if (ex._createdBy === me.username && st !== 'verified') {   // เจ้าของแก้ฉบับที่ยังไม่ยืนยัน → ส่งใหม่เข้าคิว
+            copyMeta(ex, r); r._status = 'pending'; delete r._return; records[idx.get(id)] = r; updated++; pending++;
+          } else if (st === 'verified' && !ex._edit) {   // แก้ไขข้อมูลที่ยืนยันแล้ว → เก็บเป็นฉบับแก้ไขรอยืนยัน ของเดิมยังใช้ต่อ
+            ex._edit = { by: me.username, at: now, data: stripMeta(r) }; pendingEdit++;
+          } else skipped++;   // มีฉบับแก้ไขค้างอยู่แล้ว / ไม่มีสิทธิ์
         } else {
           r._createdBy = r._createdBy || me.username;
+          r._createdAt = now;
+          if (canVerifyRec(me, r)) { r._status = 'verified'; r._verifiedBy = me.username; r._verifiedAt = now; }
+          else { r._status = 'pending'; delete r._verifiedBy; delete r._verifiedAt; pending++; }
+          delete r._edit; delete r._return;
           records.push(r);
           if (id) idx.set(id, records.length - 1);
           added++;
         }
       });
-      if (added || updated) saveRecords();
-      if (added || updated || skipped) audit('save_records', me.username, 'เพิ่ม ' + added + ' / แก้ไข ' + updated + ' / ข้าม(ไม่มีสิทธิ์แก้) ' + skipped, req);
-      sendJSON(res, 200, { ok: true, added: added, updated: updated, skipped: skipped, total: records.length }); return;
+      if (added || updated || pendingEdit) saveRecords();
+      if (added || updated || skipped || pendingEdit) audit('save_records', me.username, 'เพิ่ม ' + added + ' / แก้ไข ' + updated + (pending ? ' / รอยืนยัน ' + pending : '') + (pendingEdit ? ' / ฉบับแก้ไขรอยืนยัน ' + pendingEdit : '') + (skipped ? ' / ข้าม ' + skipped : ''), req);
+      sendJSON(res, 200, { ok: true, added: added, updated: updated, skipped: skipped, pending: pending, pendingEdit: pendingEdit, total: records.length }); return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/records/verify') {
+      const d = JSON.parse(await readBody(req) || '{}');
+      const r = records.find((x) => x && x._id === String(d.id || ''));
+      if (!r) { sendJSON(res, 404, { ok: false, error: 'ไม่พบรายการ' }); return; }
+      if (!canVerifyRec(me, r)) { sendJSON(res, 403, { ok: false, error: 'ไม่มีสิทธิ์ยืนยันข้อมูลรายการนี้ (' + (me.role === 'prov_head' ? 'ยืนยันได้เฉพาะจังหวัด ' + (me.prov || '-') : 'ผู้ตรวจยืนยันเท่านั้น') + ')' }); return; }
+      const now = new Date().toISOString(); const note = String(d.note || '').slice(0, 500); const label = recLabel(r) + ' (' + (r.pv || '-') + ')';
+      if (d.action === 'verify') {
+        let what = 'ยืนยันข้อมูล';
+        if (r._edit) { const base = stripMeta(r); const data = r._edit.data || {}; Object.keys(base).forEach((k) => { if (k[0] !== '_' && !(k in data)) delete r[k]; }); Object.keys(data).forEach((k) => { if (k[0] !== '_') r[k] = data[k]; }); what = 'ยืนยันฉบับแก้ไขของ ' + r._edit.by; delete r._edit; }
+        r._status = 'verified'; r._verifiedBy = me.username; r._verifiedAt = now; delete r._return;
+        saveRecords(); audit('verify_record', me.username, what + ': ' + label, req);
+        sendJSON(res, 200, { ok: true, record: r }); return;
+      }
+      if (d.action === 'return') {
+        if (!note) { sendJSON(res, 400, { ok: false, error: 'กรุณาระบุเหตุผลที่ส่งกลับ' }); return; }
+        let what;
+        if (r._edit) { what = 'ส่งกลับฉบับแก้ไขของ ' + r._edit.by; r._return = { by: me.username, at: now, note: note, what: 'edit', to: r._edit.by }; delete r._edit; }
+        else { what = 'ส่งกลับให้แก้ไข'; r._status = 'returned'; r._return = { by: me.username, at: now, note: note, what: 'record', to: r._createdBy || '' }; }
+        saveRecords(); audit('return_record', me.username, what + ': ' + label + ' — ' + note, req);
+        sendJSON(res, 200, { ok: true, record: r }); return;
+      }
+      sendJSON(res, 400, { ok: false, error: 'action ไม่ถูกต้อง' }); return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/records/delete') {
@@ -403,7 +473,7 @@ const server = http.createServer(async (req, res) => {
       sendJSON(res, 200, { ok: true, links: links }); return;
     }
     if (req.method === 'POST' && url.pathname === '/api/links') {
-      if (!isAdmin) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้นที่ยืนยันข้อมูลบุคคลได้' }); return; }
+      if (!(isAdmin || me.role === 'desk_head')) { sendJSON(res, 403, { ok: false, error: 'หัวหน้าโต๊ะข่าว กก. หรือ admin เท่านั้นที่ยืนยันข้อมูลบุคคลได้' }); return; }
       const data = JSON.parse(await readBody(req) || '{}');
       const items = Array.isArray(data.items) ? data.items : [];
       let n = 0;
@@ -432,11 +502,13 @@ const server = http.createServer(async (req, res) => {
       if (!u) { sendJSON(res, 404, { ok: false, error: 'ไม่พบผู้ใช้' }); return; }
       const name = String(d.name == null ? u.name : d.name).trim().slice(0, 120);
       const prov = String(d.prov == null ? u.prov : d.prov).trim().slice(0, 60);
+      const role = (d.role && ROLES.indexOf(d.role) >= 0) ? d.role : u.role;
       if (!name) { sendJSON(res, 400, { ok: false, error: 'กรุณากรอกชื่อ-สกุล' }); return; }
-      const before = (u.name || '') + ' / ' + (provLabel(u.prov) || '-');
-      u.name = name; u.prov = prov;
+      if (u.id === me.id && role !== 'admin') { sendJSON(res, 400, { ok: false, error: 'ลดสิทธิ์บัญชีตัวเองไม่ได้' }); return; }
+      const before = (u.name || '') + ' / ' + (provLabel(u.prov) || '-') + ' / ' + u.role;
+      u.name = name; u.prov = prov; u.role = role;
       saveUsers();
-      audit('admin_update_user', me.username, 'แก้ไขข้อมูลผู้ใช้ ' + u.username + ': ' + before + ' → ' + name + ' / ' + (provLabel(prov) || '-'), req);
+      audit('admin_update_user', me.username, 'แก้ไขข้อมูลผู้ใช้ ' + u.username + ': ' + before + ' → ' + name + ' / ' + (provLabel(prov) || '-') + ' / ' + role, req);
       sendJSON(res, 200, { ok: true, user: publicUser(u) }); return;
     }
 
@@ -464,7 +536,7 @@ const server = http.createServer(async (req, res) => {
       const u = users.find((x) => x.id === d.id);
       if (!u) { sendJSON(res, 404, { ok: false, error: 'ไม่พบผู้ใช้' }); return; }
       u.status = 'approved';
-      if (d.role === 'admin' || d.role === 'officer') u.role = d.role;
+      if (ROLES.indexOf(d.role) >= 0) u.role = d.role;
       saveUsers();
       audit('approve_user', me.username, 'อนุมัติผู้ใช้ ' + u.username + ' (สิทธิ์ ' + u.role + ')', req);
       sendJSON(res, 200, { ok: true, user: publicUser(u) }); return;
