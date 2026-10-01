@@ -402,6 +402,14 @@ td:last-child .rowbtns{min-width:max-content;}
 
 /* แถบเมนู: อีโมจิสี */
 .tbe{display:inline-block;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:17px;line-height:1;margin-right:7px;vertical-align:-2px;width:1.3em;text-align:center;}
+
+/* หน้าเข้าสู่ระบบ: โลโก้ + คำเตือน PDPA */
+.auth-logo{text-align:center;margin:2px 0 10px;}
+.auth-logo img{width:150px;height:auto;display:inline-block;}
+.pdpa-note{margin-top:18px;padding:12px 14px;border:1px solid #f0cf95;background:#fff8ea;border-radius:10px;font-size:12.5px;line-height:1.65;color:#5b4210;text-align:left;}
+.pdpa-hd{font-weight:700;color:#9a5c07;margin-bottom:4px;text-align:center;}
+.pdpa-ft{margin-top:6px;text-align:center;color:#7a6a4a;}
+.nw{white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -750,13 +758,14 @@ td:last-child .rowbtns{min-width:max-content;}
 <div class="auth-ov" id="authOverlay">
   <div class="auth-box">
     <div id="authLogin">
-      <h2><i class="ti ti-shield-lock" style="color:#1D9E75;"></i> เข้าสู่ระบบ</h2>
-      <div class="sub">ระบบเก็บข้อมูลบุคคล 17 จังหวัดภาคเหนือ — เฉพาะเจ้าหน้าที่ที่ได้รับอนุมัติ</div>
+      <div class="auth-logo"><img src="assets/logo-sb1.png" alt="Special Branch 1 — Royal Thai Police"></div>
+      <div class="sub" style="text-align:center;">ระบบเก็บข้อมูลบุคคล 17 จังหวัดภาคเหนือ<br>เฉพาะเจ้าหน้าที่ที่ได้รับอนุมัติ</div>
       <div class="fl"><label>ชื่อผู้ใช้</label><input id="loginUser" autocomplete="username"></div>
       <div class="fl"><label>รหัสผ่าน</label><input id="loginPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="auth-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
       <div class="auth-err" id="loginErr"></div>
       <div class="auth-alt">ยังไม่มีบัญชี? <a onclick="authMode('reg')">ลงทะเบียนเจ้าหน้าที่</a></div>
+      <div class="pdpa-note"><div class="pdpa-hd">⚠️ คำเตือน: ข้อมูลส่วนบุคคลและข้อมูลอ่อนไหว</div>ข้อมูลในระบบนี้ได้รับความคุ้มครองตาม<b>พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)</b> ใช้เพื่อการปฏิบัติราชการตามอำนาจหน้าที่เท่านั้น <b>ห้ามคัดลอก ถ่ายภาพหน้าจอ ส่งต่อ หรือนำข้อมูลออกไปเผยแพร่ภายนอกโดยไม่ได้รับอนุญาต</b> <span class="nw">ผู้ฝ่าฝืน</span>อาจมีความรับผิดทั้งทางแพ่ง ทางอาญา และทางปกครอง รวมถึงอาจถูกดำเนินการทางวินัย<div class="pdpa-ft">ระบบบันทึกการเข้าใช้งานและการกระทำของ<span class="nw">ผู้ใช้ทุกครั้ง</span></div></div>
     </div>
     <div id="authReg" style="display:none;">
       <h2><i class="ti ti-user-plus" style="color:#378ADD;"></i> ลงทะเบียนเจ้าหน้าที่</h2>
@@ -769,6 +778,7 @@ td:last-child .rowbtns{min-width:max-content;}
       <button class="auth-btn" style="background:#378ADD;" onclick="doRegister()">ลงทะเบียน</button>
       <div class="auth-err" id="regErr"></div>
       <div class="auth-alt">มีบัญชีแล้ว? <a onclick="authMode('login')">เข้าสู่ระบบ</a></div>
+      <div class="pdpa-note"><div class="pdpa-hd">⚠️ คำเตือน: ข้อมูลส่วนบุคคลและข้อมูลอ่อนไหว</div>ข้อมูลในระบบนี้ได้รับความคุ้มครองตาม<b>พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)</b> ใช้เพื่อการปฏิบัติราชการตามอำนาจหน้าที่เท่านั้น <b>ห้ามคัดลอก ถ่ายภาพหน้าจอ ส่งต่อ หรือนำข้อมูลออกไปเผยแพร่ภายนอกโดยไม่ได้รับอนุญาต</b> <span class="nw">ผู้ฝ่าฝืน</span>อาจมีความรับผิดทั้งทางแพ่ง ทางอาญา และทางปกครอง รวมถึงอาจถูกดำเนินการทางวินัย<div class="pdpa-ft">ระบบบันทึกการเข้าใช้งานและการกระทำของ<span class="nw">ผู้ใช้ทุกครั้ง</span></div></div>
     </div>
   </div>
 </div>
