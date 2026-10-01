@@ -81,23 +81,29 @@ function saveLinks() { writeJSON(LINKS_FILE, { updatedAt: new Date().toISOString
 // ---------- ระดับสิทธิ์และการยืนยันข้อมูล ----------
 //   officer    เจ้าหน้าที่        บันทึกได้ → เข้าสถานะ "รอยืนยัน" / แก้ไขข้อมูลที่ยืนยันแล้ว → เป็น "ฉบับแก้ไขรอยืนยัน"
 //   prov_head  หน.ส.จว.          ยืนยัน/ส่งกลับ ได้เฉพาะจังหวัดที่ประจำการ (ข้อมูลที่ตนเองบันทึกในจังหวัดตนเอง ไม่ต้องรอยืนยัน)
-//   desk_head  หัวหน้าโต๊ะข่าว กก. ยืนยัน/ส่งกลับ ได้ทุกจังหวัด + ตรวจสอบบุคคลซ้ำ (ลบไม่ได้)
+//   desk_head  หัวหน้าโต๊ะข่าว กก. ยืนยัน/ส่งกลับ เฉพาะข้อมูลที่บันทึก/แก้ไขโดยรหัสของโต๊ะข่าว 1-3 + ตรวจสอบบุคคลซ้ำ (ลบไม่ได้)
 //   admin      แอดมิน             ทุกอย่าง
 // สถานะข้อมูล (_status): 'verified' ใช้งาน/ค้นหาได้ · 'pending' รอยืนยัน · 'returned' ส่งกลับแก้ไข
 const ROLES = ['admin', 'desk_head', 'prov_head', 'officer'];
 const META = ['_status', '_verifiedBy', '_verifiedAt', '_edit', '_return', '_createdAt'];
 function isVerifier(u) { return u.role === 'admin' || u.role === 'desk_head' || u.role === 'prov_head'; }
-function canVerifyRec(u, r) { if (u.role === 'admin' || u.role === 'desk_head') return true; if (u.role === 'prov_head') return String(r.pv || '') === String(u.prov || ''); return false; }
+function isDeskUser(username) { const x = findUser(username); return !!x && (String(x.prov || '').indexOf('โต๊ะข่าว') === 0 || x.role === 'desk_head' || x.role === 'admin'); }
+function actorOf(r) { return (r._edit && r._edit.by) || r._createdBy || ''; }
+function canVerifyRec(u, r) {
+  if (u.role === 'admin') return true;
+  if (u.role === 'desk_head') { const a = actorOf(r); return a === u.username || isDeskUser(a); }   // เฉพาะรหัสโต๊ะข่าว 1-3
+  if (u.role === 'prov_head') return String(r.pv || '') === String(u.prov || '');
+  return false;
+}
 function stripMeta(r) { const o = {}; Object.keys(r || {}).forEach((k) => { if (META.indexOf(k) < 0) o[k] = r[k]; }); return o; }
 function copyMeta(from, to) { META.forEach((k) => { if (from[k] !== undefined) to[k] = from[k]; else delete to[k]; }); }
 function visibleTo(u, r) {
   if (!r) return false;
-  if (u.role === 'admin' || u.role === 'desk_head') return true;
+  if (u.role === 'admin') return true;
   const st = r._status || 'verified';
   if (st === 'verified') return true;
   if (r._createdBy === u.username) return true;
-  if (u.role === 'prov_head' && String(r.pv || '') === String(u.prov || '')) return true;
-  return false;
+  return canVerifyRec(u, r);
 }
 function viewOf(u, r) {
   // ฉบับแก้ไขรอยืนยัน เห็นได้เฉพาะผู้ตรวจที่มีสิทธิ์ และผู้ที่ส่งแก้ไข
