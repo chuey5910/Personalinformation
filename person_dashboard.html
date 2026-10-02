@@ -1289,7 +1289,7 @@ var VIP_SUBS=['โต๊ะอิหม่าม','คอเต็บ','บิ�
 function leaderVipRole(pl,l){var role=String((l&&l.role)||'');for(var i=0;i<RELIG_ROLES.length;i++)if(RELIG_ROLES[i][1].test(role))return RELIG_ROLES[i][0];if(RELIG_PL.indexOf(pl.pl_type||'')>=0)return 'ผู้นำ'+pl.pl_type;return '';}
 
 function splitName(n){var t=noPfx(String(n||'').replace(/[(（][^)）]*[)）]/g,' ')).split(/\s+/).filter(Boolean);return {fn:t[0]||'',ln:t.slice(1).join(' ')};}
-function nidOf(x){return String((x&&x.nid)||'').replace(/\D/g,'');}
+function nidOf(x){var n=String((x&&x.nid)||'').replace(/\D/g,'');if(n)return n;var pp=String((x&&(x.passport||x.passportNo))||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();return pp.length>=5?('PP'+pp):'';}
 var DV=[],LINKS=null;
 function buildLinks(){_dec=null;
   var all=[];
