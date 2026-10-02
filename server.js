@@ -43,7 +43,10 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const LINKS_FILE = path.join(DATA_DIR, 'links.json'); // ผลการยืนยันของ admin ว่าเป็นคนเดียวกัน/คนละคน
 const AUDIT_FILE = path.join(DATA_DIR, 'audit.log');
-const SESSION_HOURS = parseFloat(process.env.SESSION_HOURS || '12'); // หมดอายุเมื่อไม่ได้ใช้งานนานเท่านี้
+// อายุ session: ไม่มีความเคลื่อนไหว 30 นาที หรือเข้าระบบครบ 3 ชั่วโมง → ต้องเข้าระบบใหม่ (ตั้งค่าได้ด้วย SESSION_IDLE_MIN / SESSION_HOURS)
+const SESSION_IDLE_MIN = parseFloat(process.env.SESSION_IDLE_MIN || '30');
+const SESSION_HOURS = parseFloat(process.env.SESSION_HOURS || '3');
+function sessionExpired(s) { const now = Date.now(); return (now - s.last > SESSION_IDLE_MIN * 60 * 1000) || (now - s.created > SESSION_HOURS * 3600 * 1000); }
 const MAX_BODY = 200 * 1024 * 1024;
 const ROOT = __dirname;
 
@@ -247,7 +250,7 @@ function getSession(req) {
   if (!m) return null;
   const s = sessions[m[1]];
   if (!s) return null;
-  if (Date.now() - s.last > SESSION_HOURS * 3600 * 1000) { delete sessions[m[1]]; saveSessions(); return null; }
+  if (sessionExpired(s)) { delete sessions[m[1]]; saveSessions(); return null; }
   s.last = Date.now();
   s.sid = m[1];
   const user = users.find((u) => u.id === s.userId);
@@ -260,10 +263,10 @@ function destroySession(sid) { if (sessions[sid]) { delete sessions[sid]; saveSe
 setInterval(() => {
   let changed = false;
   Object.keys(sessions).forEach((k) => {
-    if (Date.now() - sessions[k].last > SESSION_HOURS * 3600 * 1000) { delete sessions[k]; changed = true; }
+    if (sessionExpired(sessions[k])) { delete sessions[k]; changed = true; }
   });
   if (changed) saveSessions();
-}, 3600 * 1000).unref();
+}, 10 * 60 * 1000).unref();
 
 // ---------- helpers ----------
 
@@ -373,7 +376,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/me') {
-      sendJSON(res, 200, { ok: true, user: publicUser(me) }); return;
+      sendJSON(res, 200, { ok: true, user: publicUser(me), session: { idleMin: SESSION_IDLE_MIN, maxHours: SESSION_HOURS, created: sess.created } }); return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/password') {
