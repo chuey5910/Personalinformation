@@ -444,15 +444,15 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
 .navbk{display:none;}
 @media(max-width:900px){#btnNavM{display:inline-flex!important;}.sidenav{position:fixed;top:var(--nv-top,74px);left:0;bottom:auto;height:calc(100vh - var(--nv-top,74px));max-height:none;border-radius:0;transform:translateX(-100%);z-index:1500;flex-basis:var(--nv-w)!important;width:var(--nv-w)!important;transition:transform .2s;}body.nv-open .sidenav{transform:none;}body.nv-open .nv-t,body.nv-open .nv-sec{display:block;}body.nv-open .nv{justify-content:flex-start;padding:9px 14px 9px 18px;}.nv-tgl{display:none;}body.nv-open .navbk{display:block;position:fixed;inset:0;background:rgba(16,36,47,.4);z-index:1400;}}
 .an-top{margin-bottom:12px;}.an-top .sbox{flex:1 1 340px;min-width:260px;}.an-top .sbox input{width:100%!important;}.an-top select{flex:0 0 auto;}.an-top input[type=date]{flex:0 0 150px;width:150px;}
-.an-grid{display:grid;grid-template-columns:280px minmax(0,1fr) 330px;gap:12px;align-items:start;}
+.an-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:12px;align-items:start;}
 .an-col{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:14px;padding:12px 14px;min-height:300px;}
-.an-left,.an-right{max-height:calc(100vh - 230px);overflow-y:auto;}
+.an-left{min-height:0;margin-bottom:12px;padding:10px 14px;}.an-lefth{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;}.an-right{max-height:calc(100vh - 200px);overflow-y:auto;}
 .an-h{font-size:13px;font-weight:800;color:#0d7a5a;margin:10px 0 6px;}.an-h:first-child{margin-top:0;}
-.an-results .an-rg{margin-bottom:8px;}.an-rgh{font-size:12.5px;font-weight:700;border-left:3px solid #ccc;padding:3px 8px;background:#f5f7f9;border-radius:0 8px 8px 0;display:flex;align-items:center;gap:6px;}
+.an-results{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}.an-results .enote{flex:1;}.an-results .an-rg{flex:0 0 260px;max-height:200px;overflow-y:auto;border:1px solid var(--color-border-tertiary);border-radius:10px;}.an-results .an-rgh{position:sticky;top:0;z-index:1;}.an-rgh{font-size:12.5px;font-weight:700;border-left:3px solid #ccc;padding:3px 8px;background:#f5f7f9;border-radius:0 8px 8px 0;display:flex;align-items:center;gap:6px;}
 .an-ri{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-bottom:1px solid #f0f2f4;cursor:pointer;font-size:13px;line-height:1.35;}.an-ri:hover{background:#eaf7f2;}.an-ri.on{background:#e1f5ee;}.an-ri input{margin-top:3px;width:16px;height:16px;flex:0 0 16px;accent-color:#1D9E75;cursor:pointer;}.an-ri .an-rib{flex:1;min-width:0;}.an-ri .an-ril{display:block;font-weight:600;}.an-rgh input{width:15px;height:15px;accent-color:#1D9E75;cursor:pointer;margin:0 2px 0 0;}
 .an-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
 .an-mini{padding:4px 10px!important;font-size:12.5px!important;}
-.an-canvas-wrap{position:relative;height:calc(100vh - 330px);min-height:420px;border:1px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden;background:#fbfcfd;}
+.an-canvas-wrap{position:relative;height:calc(100vh - 300px);min-height:560px;border:1px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden;background:#fbfcfd;}
 #anCanvas{display:block;width:100%;height:100%;}
 .an-tip{position:absolute;background:#22313c;color:#fff;font-size:12px;padding:6px 9px;border-radius:8px;pointer-events:none;max-width:280px;line-height:1.4;z-index:5;}.an-tip .lk-pv{color:#cfd8e0;}
 .an-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:12px;color:#4a5968;}.an-lg i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;color:#fff;font-style:normal;font-size:11px;margin-right:4px;vertical-align:middle;}
@@ -462,7 +462,7 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
 .an-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .an-tl{max-height:260px;overflow-y:auto;}.an-tli{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12.5px;cursor:pointer;}.an-tld{flex:0 0 86px;color:#66798a;}
 .an-path{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12.5px;}.an-pn{border:1.5px solid #ccc;border-radius:8px;padding:2px 8px;background:#fff;}.an-pe{color:#b42318;font-weight:700;}
-@media(max-width:1100px){.an-grid{grid-template-columns:1fr;}.an-left,.an-right{max-height:none;}.an-canvas-wrap{height:60vh;}}
+@media(max-width:1100px){.an-grid{grid-template-columns:1fr;}.an-right{max-height:none;}.an-canvas-wrap{height:60vh;}}
 </style>
 </head>
 <body>
@@ -810,8 +810,8 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
 
 <div id="tab-analyze" class="panel">
   <div class="fbar an-top"><div class="sbox"><i class="ti ti-search" style="font-size:14px;color:var(--color-text-tertiary);"></i><input id="anQ" placeholder="ค้นหาทุกเมนู ทุกจังหวัด: ชื่อ เบอร์โทร ทะเบียนรถ IMEI เลขบัตร พาสปอร์ต บริษัท สถานที่ คำในพฤติการณ์ … แล้วกด Enter" onkeydown="if(event.key==='Enter')anSearch()"></div><button class="bp" onclick="anSearch()"><i class="ti ti-search"></i> ค้นหา</button><button class="bs" onclick="document.getElementById('anQ').value='';anSearch()"><i class="ti ti-x"></i> ล้างคำค้น</button></div>
+  <div class="an-col an-left"><div class="an-lefth"><span class="an-h" style="margin:0;">ผลค้นหา <span id="anCnt" class="lk-pv"></span></span><span class="lk-pv">ติ๊กเลือกข้อมูลที่จะใช้วิเคราะห์ · ติ๊กออก = ไม่ใช้ · ติ๊กที่หัวกลุ่ม = ทั้งกลุ่ม</span></div><div id="anResults" class="an-results"></div></div>
   <div class="an-grid">
-    <div class="an-col an-left"><div class="an-h">ผลค้นหา <span id="anCnt" class="lk-pv"></span></div><div class="lk-pv" style="margin:-4px 0 6px;">ติ๊กเลือกข้อมูลที่จะใช้วิเคราะห์ ติ๊กออก = ไม่ใช้</div><div id="anResults" class="an-results"></div></div>
     <div class="an-col an-mid"><div class="an-tools"><span class="an-h" style="margin:0;">ผังความเชื่อมโยง</span><span id="anStat" class="lk-pv"></span><span style="flex:1"></span><button class="bs an-mini" onclick="anRelayout()"><i class="ti ti-refresh"></i> จัดผังใหม่</button><button class="bs an-mini" onclick="anFit()"><i class="ti ti-arrows-maximize"></i> พอดีจอ</button><button class="bs an-mini" onclick="anUnhideAll()"><i class="ti ti-eye"></i> แสดงที่ซ่อน</button><button class="bs an-mini" onclick="anExport()"><i class="ti ti-download"></i> PNG</button><button class="bs an-mini" onclick="anClear()"><i class="ti ti-trash"></i> ล้างผัง</button></div><div class="an-canvas-wrap"><canvas id="anCanvas"></canvas><div id="anTip" class="an-tip" style="display:none;"></div></div><div id="anLegend" class="an-legend"></div></div>
     <div class="an-col an-right"><div id="anSide" class="an-side"></div><div class="an-h" style="margin-top:10px;">ผลวิเคราะห์</div><div id="anAnalysis" class="an-analysis"><div class="lk-pv">เลือกรายการจากผลค้นหาเพื่อสร้างผัง</div></div></div>
   </div>
