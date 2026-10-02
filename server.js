@@ -113,7 +113,7 @@ function viewOf(u, r) {
   if (r._edit && !(canVerifyRec(u, r) || r._edit.by === u.username)) { const o = Object.assign({}, r); delete o._edit; return o; }
   return r;
 }
-function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; return r._id || ''; }
+function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; return r._id || ''; }
 // ข้อมูลเดิมทั้งหมดถือว่ายืนยันแล้ว (ตามที่ admin ตกลง) — เติมสถานะให้ครั้งเดียว
 (function markExistingVerified() {
   let n = 0;
