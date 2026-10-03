@@ -114,6 +114,84 @@ function viewOf(u, r) {
   return r;
 }
 function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; if (t === 'event') return [r.ev_name, r.ev_date].filter(Boolean).join(' ') || r._id || ''; return r._id || ''; }
+// ---- ทะเบียนบุคคลต้องมีทุกคนที่มีข้อมูลในระบบ: สร้างอัตโนมัติให้ชื่อคนในรายการอื่นที่ยังไม่มีทะเบียน แล้วผูก pref กลับ ----
+const AP_PFX = /^(นางสาว|นาวสาว|นาง|นาย|น\.ส\.)\s*/;
+const apNk = (s) => String(s || '').replace(AP_PFX, '').replace(/\s+/g, '');
+const AP_CIVIL = /^(นาย|นาง|นางสาว|น\.?ส\.?|Mr\.?|Mrs\.?|Ms\.?|Miss|ไม่ระบุ|อื่นๆ.*|-)$/i;
+const AP_NONAME = /^(ชาย|หญิง|ไม่ทราบ|ไม่ระบุ|ไม่ปรากฏ|ยังไม่มี|-)/;
+const AP_RELIG = /มัสยิด|สุเหร่า|วัด|โบสถ์|สำนักสงฆ์|ศาลเจ้า|ชาบัด/;
+function apActive(r) { return r && !r._deleted && r._status !== 'returned'; }
+function apPhone(p) { let d = String(p || '').replace(/\D/g, ''); if (d.length === 9 && /^[689]/.test(d)) d = '0' + d; return d.length >= 9 ? d : ''; }
+function carryPrefs(ex, r) {
+  ['persons', 'ev_persons', 'suspects', 'leaders', 'bd_persons'].forEach((k) => {
+    if (!Array.isArray(ex[k]) || !Array.isArray(r[k])) return;
+    r[k].forEach((p) => { if (!p || typeof p !== 'object' || p.pref) return; const q = ex[k].find((x) => x && x.pref && apNk(x.name) === apNk(p.name)); if (q) p.pref = q.pref; });
+  });
+  if (ex.owner_pref && !r.owner_pref && apNk(ex.owner_name) === apNk(r.owner_name)) r.owner_pref = ex.owner_pref;
+}
+function ensurePersons() {
+  const now = new Date().toISOString();
+  const byId = new Map(), pidx = new Map(), nidx = new Map();
+  records.forEach((r) => {
+    if (!r || !r._id) return; byId.set(r._id, r);
+    if (!apActive(r) || ['watch', 'vip'].indexOf(r.rtype || 'watch') < 0) return;
+    [apNk((r.fn || '') + (r.ln || '')), apNk(((r.title || '') + (r.fn || '')) + (r.ln || ''))].forEach((k) => { const key = k + '|' + r.pv; if (!pidx.has(key)) pidx.set(key, r); });
+    if (r.nid) nidx.set(r.nid, r); if (r.passport) nidx.set('PP' + r.passport, r);
+  });
+  let created = 0;
+  function ensure(parent, p, pv, spec) {
+    const nm = String(p.name || '').replace(AP_PFX, '').trim();
+    if (!nm || AP_NONAME.test(nm)) return '';
+    if (p.pref && byId.has(p.pref) && apActive(byId.get(p.pref))) return '';
+    const k = apNk(nm) + '|' + pv;
+    let w = (p.nid && nidx.get(p.nid)) || (p.passport && nidx.get('PP' + p.passport)) || pidx.get(k);
+    const id = w ? w._id : 'w16_' + crypto.createHash('md5').update(k).digest('hex').slice(0, 12);
+    if (!w) w = byId.get(id);
+    if (!w) {
+      let ttl = (p.title && !AP_CIVIL.test(p.title)) ? p.title : ''; let base = nm; const al = [], ex = [];
+      base = base.replace(/\s*\(([^)]*)\)\s*/g, (z, q) => { (q.length <= 25 ? al : ex).push(q); return ' '; }).trim();
+      let m = base.match(/^((?:[ก-๙]{1,4}\.)+)\s*(.+)$/); if (m) { ttl = ttl || m[1]; base = m[2]; }
+      m = base.match(/^(ฮัจยี|อิหม่าม|ดร\.)\s+(.+)$/); if (m) { ttl = ttl || m[1]; base = m[2]; }
+      m = base.match(/^(.*?)\s+หรือ\s*(.+)$/); if (m) { base = m[1]; al.push(m[2]); }
+      const parts = base.split(/\s+/);
+      if (p.name_en) al.push(p.name_en);
+      w = { _id: id, rtype: spec.rtype, pv: pv, title: ttl, fn: parts[0], ln: parts.slice(1).join(' '), nid: /^\d{13}$/.test(p.nid || '') ? p.nid : '', nick: '', alias: al.join(', '), ph: apPhone(p.phone),
+        addrReg: { house: p.addr || '', moo: '', village: '', soi: '', road: '', prov: '', dist: '', subdist: '', zip: '' } };
+      if (spec.rtype === 'watch') { w.grp = spec.grp; w.sub = spec.sub || ''; w.subOther = ''; w.news = [{ date: '', who: '', role: spec.role + (ex.length ? ' — ' + ex.join(', ') : ''), cat: '', move: '' }]; }
+      else { w.cats = [{ key: spec.cat, label: spec.catLabel, text: spec.role }]; }
+      const nat = p.nat || p.nationality; if (nat && nat !== 'ไทย') w.nat = nat; if (p.passport) w.passport = p.passport;
+      if (p.social && /^https?:/.test(p.social)) w.social = { facebook: /facebook/.test(p.social) ? p.social : '', ig: '', x: '', linkedin: '', youtube: '', tiktok: '', podcast: '', website: '', otherName: /facebook/.test(p.social) ? '' : 'Social Media', otherUrl: /facebook/.test(p.social) ? '' : p.social };
+      w._createdBy = parent._createdBy || 'auto'; w._createdAt = now; w._autoFrom = parent._id;
+      if ((parent._status || 'verified') === 'verified') { w._status = 'verified'; w._verifiedBy = 'auto'; w._verifiedAt = now; } else w._status = 'pending';
+      records.push(w); byId.set(id, w); pidx.set(k, w); if (w.nid) nidx.set(w.nid, w); if (w.passport) nidx.set('PP' + w.passport, w); created++;
+    } else if (w.rtype === 'watch' && spec.role && !(w.news || []).some((z) => z.role === spec.role)) {
+      if (String(w._id).indexOf('w16_') !== 0) return w._id;
+      w.news = (w.news || []).concat([{ date: '', who: '', role: spec.role, cat: '', move: '' }]);
+    }
+    return w._id;
+  }
+  const link = (parent, p, id) => { if (id && p.pref !== id) { p.pref = id; parent._updatedAt = now; } };
+  records.slice().forEach((r) => {
+    if (!apActive(r) || !r._id) return; const rt = r.rtype || 'watch';
+    if (rt === 'org') (r.persons || []).forEach((p) => {
+      const role = [p.level, p.who].filter(Boolean).join(' · ') + ' (' + (r.org_name || '') + ')';
+      let spec = { rtype: 'watch', grp: 6, role: role };
+      if (r.org_status === 'กองกำลังต่างชาติ') spec = { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: role };
+      else if (r.org_status === 'บริษัท / นิติบุคคล') spec = { rtype: 'watch', grp: 16, sub: /นอมินี/.test(p.level || '') ? 'นอมินี/หุ้นส่วนบังหน้า' : /ผู้ถือหุ้นต่างชาติ|เจ้าของ/.test(p.level || '') ? 'ผู้ถือหุ้นต่างชาติ' : 'เครือข่าย/ผู้เกี่ยวข้อง', role: role };
+      link(r, p, ensure(r, p, r.pv, spec)); });
+    else if (rt === 'event') (r.ev_persons || []).forEach((p) => link(r, p, ensure(r, p, p.pv || r.pv, { rtype: 'watch', grp: 6, role: 'ร่วมจัดกิจกรรม: ' + (r.ev_name || '') + (r.ev_date ? ' (' + r.ev_date + ')' : '') + (p.detail ? ' · ' + p.detail : '') })));
+    else if (rt === 'case') (r.suspects || []).forEach((p) => link(r, p, ensure(r, Object.assign({}, p, { passport: p.passport || p.passportNo || '' }), r.pv, { rtype: 'watch', grp: 10, role: 'ผู้ต้องหา: ' + (r.case_subject || r.case_type || '') + (p.role ? ' · ' + p.role : '') })));
+    else if (rt === 'place') (r.leaders || []).forEach((p) => {
+      const rl = p.role || ''; const role = (rl || 'ผู้นำ/บทบาท') + ' (' + (r.pl_name || '') + ')'; let spec;
+      if (/อาชญากรรมข้ามชาติ/.test(r.pl_type || '')) spec = { rtype: 'watch', grp: 16, sub: /คุมพื้นที่/.test(rl) ? 'ผู้คุมพื้นที่' : '', role: role };
+      else if (AP_RELIG.test(r.pl_type || '')) spec = { rtype: 'watch', grp: 17, sub: /อิหม่าม/.test(rl) ? 'โต๊ะอิหม่าม/อิหม่าม' : /คอเต็บ/.test(rl) ? 'คอเต็บ' : /บิลาล/.test(rl) ? 'บิลาล' : /ราไบ/.test(rl) ? 'ราไบ' : /ผู้นำ|ผู้ดูแล|กรรมการ/.test(rl) ? 'ผู้นำ/ผู้ดูแล/กรรมการ' : 'อื่นๆ', role: role };
+      else spec = { rtype: 'watch', grp: 8, role: role };
+      link(r, p, ensure(r, p, r.pv, spec)); });
+    else if (rt === 'border') (r.bd_persons || []).forEach((p) => link(r, p, ensure(r, p, r.pv, { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: [p.role, p.side].filter(Boolean).join(' · ') })));
+    else if (rt === 'vehicle' && r.owner_name) { const id = ensure(r, { name: r.owner_name, nid: r.owner_nid, addr: r.owner_addr, pref: r.owner_pref }, r.pv, { rtype: 'watch', grp: 6, role: 'เจ้าของรถ ' + [r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '') }); if (id && r.owner_pref !== id) { r.owner_pref = id; r._updatedAt = now; } }
+  });
+  return created;
+}
 // ข้อมูลเดิมทั้งหมดถือว่ายืนยันแล้ว (ตามที่ admin ตกลง) — เติมสถานะให้ครั้งเดียว
 (function markExistingVerified() {
   let n = 0;
@@ -416,7 +494,9 @@ const server = http.createServer(async (req, res) => {
         if (id && idx.has(id)) {
           const ex = records[idx.get(id)];
           // นับเฉพาะรายการที่เนื้อหาเปลี่ยนจริง (ไม่นับช่องสถานะ/การยืนยันที่เซิร์ฟเวอร์เป็นผู้กำหนด)
-          const changed = JSON.stringify(stripMeta(ex)) !== JSON.stringify(stripMeta(r));
+          carryPrefs(ex, r);   // ค่าผูกทะเบียนบุคคลที่เซิร์ฟเวอร์ใส่ให้ ไม่ให้สำเนาเก่าในเบราว์เซอร์ลบทิ้ง
+          const a0 = stripMeta(ex), b0 = stripMeta(r); delete a0._updatedAt; delete b0._updatedAt;
+          const changed = JSON.stringify(a0) !== JSON.stringify(b0);
           if (!changed) return;
           const st = ex._status || 'verified';
           if (canVerifyRec(me, ex)) {            // ผู้ตรวจ/แอดมิน แก้ได้ตรง ๆ (สถานะคงเดิม)
@@ -437,9 +517,10 @@ const server = http.createServer(async (req, res) => {
           added++;
         }
       });
-      if (added || updated || pendingEdit) saveRecords();
-      if (added || updated || skipped || pendingEdit) audit('save_records', me.username, 'เพิ่ม ' + added + ' / แก้ไข ' + updated + (pending ? ' / รอยืนยัน ' + pending : '') + (pendingEdit ? ' / ฉบับแก้ไขรอยืนยัน ' + pendingEdit : '') + (skipped ? ' / ข้าม ' + skipped : ''), req);
-      sendJSON(res, 200, { ok: true, added: added, updated: updated, skipped: skipped, pending: pending, pendingEdit: pendingEdit, total: records.length }); return;
+      const auto = (added || updated) ? ensurePersons() : 0;
+      if (added || updated || pendingEdit || auto) saveRecords();
+      if (added || updated || skipped || pendingEdit) audit('save_records', me.username, 'เพิ่ม ' + added + ' / แก้ไข ' + updated + (pending ? ' / รอยืนยัน ' + pending : '') + (pendingEdit ? ' / ฉบับแก้ไขรอยืนยัน ' + pendingEdit : '') + (skipped ? ' / ข้าม ' + skipped : '') + (auto ? ' / สร้างทะเบียนบุคคลอัตโนมัติ ' + auto : ''), req);
+      sendJSON(res, 200, { ok: true, added: added, updated: updated, skipped: skipped, pending: pending, pendingEdit: pendingEdit, auto: auto, total: records.length }); return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/records/verify') {
@@ -452,6 +533,9 @@ const server = http.createServer(async (req, res) => {
         let what = 'ยืนยันข้อมูล';
         if (r._edit) { const base = stripMeta(r); const data = r._edit.data || {}; Object.keys(base).forEach((k) => { if (k[0] !== '_' && !(k in data)) delete r[k]; }); Object.keys(data).forEach((k) => { if (k[0] !== '_') r[k] = data[k]; }); what = 'ยืนยันฉบับแก้ไขของ ' + r._edit.by; delete r._edit; }
         r._status = 'verified'; r._verifiedBy = me.username; r._verifiedAt = now; delete r._return;
+        // ทะเบียนบุคคลที่สร้างอัตโนมัติจากรายการนี้ ยืนยันไปพร้อมกัน / สร้างเพิ่มถ้าฉบับแก้ไขมีชื่อใหม่
+        records.forEach((x) => { if (x && x._autoFrom === r._id && x._status === 'pending') { x._status = 'verified'; x._verifiedBy = me.username; x._verifiedAt = now; } });
+        const auto = ensurePersons(); if (auto) what += ' / สร้างทะเบียนบุคคลอัตโนมัติ ' + auto;
         saveRecords(); audit('verify_record', me.username, what + ': ' + label, req);
         sendJSON(res, 200, { ok: true, record: r }); return;
       }
