@@ -682,7 +682,6 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
   <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_leader"> ผู้นำท้องถิ่น (กำนัน/ผู้ใหญ่บ้าน)</label><input type="text" id="v_cat_leader_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
   <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_force"> ผู้นำกองกำลังต่างชาติ</label><input type="text" id="v_cat_force_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
   <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_envoy"> ทูต</label><input type="text" id="v_cat_envoy_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
-  <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_relig"> ผู้นำศาสนา</label><input type="text" id="v_cat_relig_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
   <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_acad"> นักวิชาการ</label><input type="text" id="v_cat_acad_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
   <div class="catrow"><label class="ckopt"><input type="checkbox" id="v_cat_gov"> ผู้บริหารภาครัฐ</label><input type="text" id="v_cat_gov_t" placeholder="ตำแหน่ง / รายละเอียด"></div>
 </div>
@@ -1423,11 +1422,8 @@ function buildLinks(){_dec=null;ID_IDX=null;
   var D=decisions();var byKey={};
   all.forEach(function(e){e.key=akey(e);byKey[e.key]=e;e.nk=nameKey(e.full)+'|'+e.pv;if(e.nid)(byNid[e.nid]=byNid[e.nid]||[]).push(e);if(nameKey(e.full))(byName[e.nk]=byName[e.nk]||[]).push(e);});
   LINKS={all:all,byNid:byNid,byName:byName,byKey:byKey};
-  var vipEs=all.filter(function(x){return x.kind==='vip'||x.kind==='watch';});
-  // ผู้นำศาสนา → รายการบุคคลสำคัญ (รวมคนเดียวกันที่อยู่หลายสถานที่ / ข้ามถ้ามีทะเบียนบุคคลอยู่แล้ว ทั้งบุคคลสำคัญและบุคคลเฝ้าระวัง)
-  var groups={},order=[],alias={};
-  all.forEach(function(e){if(e.kind!=='leader'||!e.role)return;if(vipEs.some(function(x){return D.same(x.key,e.key)||(!D.diff(x.key,e.key)&&(x.nk===e.nk||(e.nid&&x.nid===e.nid)));}))return;var ks=[e.nk];if(D.root(e.key))ks.push('r:'+D.root(e.key));var g=null;ks.forEach(function(k){if(!g&&alias[k])g=alias[k];});if(!g){g=ks[ks.length-1];groups[g]=[];order.push(g);}ks.forEach(function(k){alias[k]=g;});groups[g].push(e);});
-  DV=order.map(function(k,n){var es=groups[k];var sn=splitName(es[0].full);var roles=es.map(function(e){return e.role;});var d={rtype:'vip',_derived:true,_dv:n,_ents:es,fn:sn.fn,ln:sn.ln,title:es[0].sub.title||'',pv:es[0].pv,phone:es[0].sub.phone||'',_roles:roles,_places:es.map(function(e){return {idx:e.idx,name:e.rec.pl_name||'-',role:e.role,rawRole:e.sub.role||''};}),vip_role:roles.join(' / '),_place_name:es.map(function(e){return e.rec.pl_name||'';}).join(' ')};return d;});
+  // ผู้นำศาสนา/ผู้นำในสถานที่ไม่ใช่บุคคลสำคัญ — ทุกคนมีทะเบียนบุคคล (กลุ่ม 17) แล้ว จึงไม่สร้างรายการบุคคลสำคัญแฝง
+  DV=[];
 }
 function allRecs(withPending){return (withPending?recs:activeRecs()).concat(DV);}
 // หาทุกมิติของบุคคล จากรายการที่เป็นคนนี้ (เลขบัตร หรือ ชื่อ-สกุล+จังหวัด)
@@ -1586,7 +1582,7 @@ function flatRec(r,i){var rt=r.rtype||'watch';if(rt==='watch')return flatRecWatc
   if(rt==='border'){b['วัน']=r.bd_date||'';b['เวลา']=r.bd_time||'';b['สถานที่ปะทะ']=r.bd_loc||'';b['ตรงข้ามกับไทย']=r.bd_opposite||'';b['ระยะห่างจากแนวชายแดนไทย']=r.bd_distance||'';b['พิกัดปะทะ']=r.bd_coord||'';b['ฝ่ายเข้าตี']=r.bd_attacker||'';b['ฝ่ายตั้งรับ']=r.bd_defender||'';b['รูปแบบการสู้รบ']=r.bd_combat||'';b['รายละเอียดรูปแบบ']=r.bd_combat_note||'';b['ประเภทกลุ่มปัญหา']=r.bd_cat||'';b['ผลกระทบต่อฝั่งไทย']=r.bd_impact_th||'';b['กองกำลังที่เกี่ยวข้อง']=(r.bd_forces||[]).map(function(id){var o=recs.find(function(x){return x._id===id;});return o?o.org_name:id;}).join(', ');b['บุคคลที่เกี่ยวข้อง']=(r.bd_persons||[]).map(function(p){return p.name+(p.side?' ('+p.side+')':'');}).join(', ');b['ความเสียหายฝั่งเมียนมา']=r.bd_dmg_mm||'';b['ความเสียหายฝั่งไทย']=r.bd_dmg_th||'';b['ความยืดเยื้อ(โดย)']=r.bd_prolong||'';b['รายละเอียดการสู้รบ']=r.bd_detail||'';}
  return b;}
 
-var VIP_CATS=[["polit", "นักการเมือง (สส./สว./รัฐมนตรี)"], ["expolit", "อดีตนักการเมือง"], ["local", "นักการเมืองท้องถิ่น (นายก อบจ./เทศมนตรี/อบต./สจ.)"], ["exlocal", "อดีตนักการเมืองท้องถิ่น"], ["leader", "ผู้นำท้องถิ่น (กำนัน/ผู้ใหญ่บ้าน)"], ["force", "ผู้นำกองกำลังต่างชาติ"], ["envoy", "ทูต"], ["relig", "ผู้นำศาสนา"], ["acad", "นักวิชาการ"], ["gov", "ผู้บริหารภาครัฐ"]];
+var VIP_CATS=[["polit", "นักการเมือง (สส./สว./รัฐมนตรี)"], ["expolit", "อดีตนักการเมือง"], ["local", "นักการเมืองท้องถิ่น (นายก อบจ./เทศมนตรี/อบต./สจ.)"], ["exlocal", "อดีตนักการเมืองท้องถิ่น"], ["leader", "ผู้นำท้องถิ่น (กำนัน/ผู้ใหญ่บ้าน)"], ["force", "ผู้นำกองกำลังต่างชาติ"], ["envoy", "ทูต"], ["acad", "นักวิชาการ"], ["gov", "ผู้บริหารภาครัฐ"]];
 var VIP_CAT_LBL={};VIP_CATS.forEach(function(c){VIP_CAT_LBL[c[0]]=c[1];});VIP_CAT_LBL.vip='ยังไม่จัดประเภท';
 function vipCatLabel(c){return VIP_CAT_LBL[c.key]||c.label||c.key;}
 function getVipCats(){var a=[];VIP_CATS.forEach(function(c){var cb=document.getElementById('v_cat_'+c[0]);if(cb&&cb.checked)a.push({key:c[0],label:c[1],text:gv('v_cat_'+c[0]+'_t')});});return a;}
@@ -1630,7 +1626,7 @@ var TNC_TYPE='แหล่งอาชญากรรมข้ามชาติ
 var ORG_STATUS=['มูลนิธิ','สมาคม','กลุ่มอิสระ / เครือข่ายไม่จดทะเบียน','กลุ่มปัญหาในพื้นที่','กองกำลังต่างชาติ','บริษัท / นิติบุคคล','อื่นๆ'];
 var BD_COMBAT=['โดรน (Military Drone)','โจมตีทางอากาศ (Airstrike)','ปะทะภาคพื้นดิน (Ground combat)','ปืนใหญ่/เครื่องยิงลูกระเบิด (Artillery strike)','ส่งกำลังบำรุงทางอากาศ (Supply drop)','กดดัน/ข่มขวัญ (Show of force)','ระเบิด/วินาศกรรม','อื่นๆ/ไม่ทราบรูปแบบ'];
 function subFilterCfg(rt){
-  if(rt==='vip')return {label:'ประเภทบุคคลสำคัญ',all:'ทุกประเภทบุคคลสำคัญ',field:'vip_role',icon:'ti-star',opts:VIP_CATS.map(function(c){return ['cat:'+c[0],c[1]];}).concat([['cat:vip','ยังไม่จัดประเภท']]).concat(VIP_SUBS.map(function(v){return [v,v+' (จากสถานที่สำคัญ)'];}))};
+  if(rt==='vip')return {label:'ประเภทบุคคลสำคัญ',all:'ทุกประเภทบุคคลสำคัญ',field:'vip_role',icon:'ti-star',opts:VIP_CATS.map(function(c){return ['cat:'+c[0],c[1]];}).concat([['cat:vip','ยังไม่จัดประเภท']])};
   if(rt==='watch')return {label:'กลุ่ม',all:'ทุกกลุ่ม',field:'grp',icon:'ti-users-group',opts:GRPS.map(function(g){return [String(g.id),g.name];})};
   if(rt==='place'){var seen={};var vals=PL_TYPES.slice();recs.forEach(function(r){if((r.rtype||'')==='place'&&r.pl_type&&vals.indexOf(r.pl_type)<0)vals.push(r.pl_type);});return {label:'ประเภทสถานที่',all:'ทุกประเภทสถานที่',field:'pl_type',icon:'ti-building-monument',opts:vals.map(function(v){return [v,v];})};}
   if(rt==='event'){var en={};recs.forEach(function(x){if(x&&x.rtype==='event'&&x.ev_name&&!x._deleted)en[x.ev_name]=(en[x.ev_name]||0)+1;});return {label:'ชื่อกิจกรรม',all:'ทุกกิจกรรม',field:'ev_name',icon:'ti-speakerphone',opts:Object.keys(en).sort().map(function(k){return [k,k+' ('+en[k]+')'];})};}
