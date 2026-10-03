@@ -1036,6 +1036,7 @@ const GRPS=[
   {id:12,name:'กลุ่มบุคคลผู้ได้รับความเดือดร้อน (ยื่นฎีกา)',sub:['ยื่นผ่านองคมนตรี','ยื่นผ่าน 1111','ยื่นผ่านศูนย์ดำรงธรรมจังหวัด','อื่นๆ']},
   {id:13,name:'กลุ่มบุคคลพ้นโทษ'},{id:14,name:'กลุ่ม Watch list (กรมสุขภาพจิต)'},{id:15,name:'กลุ่มคนเร่ร่อน'},
   {id:16,name:'เครือข่ายอาชญากรรมข้ามชาติ / นอมินี',sub:['กลุ่มทุน/ผู้ลงทุน','ผู้คุมพื้นที่','นอมินี/หุ้นส่วนบังหน้า','ผู้ถือหุ้นต่างชาติ','เครือข่าย/ผู้เกี่ยวข้อง']},
+  {id:17,name:'ผู้นำศาสนา / ผู้มีบทบาทในศาสนสถาน',sub:['โต๊ะอิหม่าม/อิหม่าม','คอเต็บ','บิลาล','ผู้นำ/ผู้ดูแล/กรรมการ','อื่นๆ']},
 ];
 const MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const SOCIALS=[['facebook','Facebook','ti-brand-facebook'],['ig','Instagram','ti-brand-instagram'],['x','X (Twitter)','ti-brand-x'],['linkedin','LinkedIn','ti-brand-linkedin'],['youtube','YouTube','ti-brand-youtube'],['tiktok','TikTok','ti-brand-tiktok'],['podcast','Podcast','ti-microphone'],['website','Website','ti-world']];
@@ -1330,7 +1331,7 @@ function saveEvent(){var nm=gv('ev_name');if(!nm){gToast('กรุณากร�
 function saveActivity(){var pv=gv('act_pv');var nm=gv('act_name');if(!nm){gToast('กรุณากรอกชื่อกิจกรรม');return;}var rec={rtype:'activity',pv:pv,act_name:nm,act_date:gv('act_date'),act_attendees:gv('act_attendees'),act_place:gv('act_place'),act_detail:gv('act_detail')};recs.push(rec);persist();clrActivity();rList();gToast('บันทึกกิจกรรมแล้ว ✓');}
 function clrActivity(){['act_name','act_date','act_attendees','act_place','act_detail'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});}
 
-var GRP_SHORT={1:'ม.110/112/116',2:'จชต.',3:'ก่อกวน',4:'เฝ้าระวังพิเศษ',5:'หมายจับทั่วไป',6:'นักเคลื่อนไหว',7:'การเมือง',8:'ท้องถิ่น',9:'สื่อออนไลน์',10:'คดีอาญา',11:'จิตเวช',12:'ผู้เดือดร้อน',13:'พ้นโทษ',14:'Watch list',15:'คนเร่ร่อน',16:'ข้ามชาติ/นอมินี'};
+var GRP_SHORT={1:'ม.110/112/116',2:'จชต.',3:'ก่อกวน',4:'เฝ้าระวังพิเศษ',5:'หมายจับทั่วไป',6:'นักเคลื่อนไหว',7:'การเมือง',8:'ท้องถิ่น',9:'สื่อออนไลน์',10:'คดีอาญา',11:'จิตเวช',12:'ผู้เดือดร้อน',13:'พ้นโทษ',14:'Watch list',15:'คนเร่ร่อน',16:'ข้ามชาติ/นอมินี',17:'ผู้นำศาสนา'};
 var RT_ORDER={watch:1,vip:2,place:3,'case':4,activity:5,border:6,org:7};
 function sortRows(rows){return rows.slice().sort(function(a,b){var pa=P17.indexOf(a.pv||''),pb=P17.indexOf(b.pv||'');if(pa<0)pa=99;if(pb<0)pb=99;if(pa!==pb)return pa-pb;var ra=RT_ORDER[a.rtype||'watch']||9,rb=RT_ORDER[b.rtype||'watch']||9;if(ra!==rb)return ra-rb;var ga=(a.rtype||'watch')==='watch'?(parseInt(a.grp)||99):0,gb=(b.rtype||'watch')==='watch'?(parseInt(b.grp)||99):0;if(ga!==gb)return ga-gb;return String(recTitle(a)).localeCompare(String(recTitle(b)),'th');});}
 function rtypeBadge(r){var rt=r.rtype||'watch';if(rt==='watch'&&r.grp)return '<span class="bge bge-grp bw'+(r.grp%6)+'" title="'+escH(gName(r.grp))+'">'+escH(gName(r.grp))+'</span>';var sub=(rt==='place'&&r.pl_type)||(rt==='org'&&r.org_status)||'';return '<span class="bge '+rtBge(rt)+'" title="'+escH(rtypeLabel(rt))+'">'+escH(sub||rtypeLabel(rt))+'</span>';}
