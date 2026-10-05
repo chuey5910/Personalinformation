@@ -123,7 +123,7 @@ const AP_RELIG = /มัสยิด|สุเหร่า|วัด|โบส�
 function apActive(r) { return r && !r._deleted && r._status !== 'returned'; }
 function apPhone(p) { let d = String(p || '').replace(/\D/g, ''); if (d.length === 9 && /^[689]/.test(d)) d = '0' + d; return d.length >= 9 ? d : ''; }
 function carryPrefs(ex, r) {
-  ['persons', 'ev_persons', 'suspects', 'leaders', 'bd_persons'].forEach((k) => {
+  ['persons', 'ev_persons', 'act_persons', 'suspects', 'leaders', 'bd_persons'].forEach((k) => {
     if (!Array.isArray(ex[k]) || !Array.isArray(r[k])) return;
     r[k].forEach((p) => { if (!p || typeof p !== 'object' || p.pref) return; const q = ex[k].find((x) => x && x.pref && apNk(x.name) === apNk(p.name)); if (q) p.pref = q.pref; });
   });
@@ -179,6 +179,7 @@ function ensurePersons() {
       if (r.org_status === 'กองกำลังต่างชาติ') spec = { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: role };
       else if (r.org_status === 'บริษัท / นิติบุคคล') spec = { rtype: 'watch', grp: 16, sub: /นอมินี/.test(p.level || '') ? 'นอมินี/หุ้นส่วนบังหน้า' : /ผู้ถือหุ้นต่างชาติ|เจ้าของ/.test(p.level || '') ? 'ผู้ถือหุ้นต่างชาติ' : 'เครือข่าย/ผู้เกี่ยวข้อง', role: role };
       link(r, p, ensure(r, p, r.pv, spec)); });
+    else if (rt === 'activity') (r.act_persons || []).forEach((p) => link(r, p, ensure(r, p, p.pv || r.pv, { rtype: 'watch', grp: 6, role: 'ร่วมกิจกรรม: ' + (r.act_name || '') + (r.act_date ? ' (' + r.act_date + ')' : '') + (p.detail ? ' · ' + p.detail : '') })));
     else if (rt === 'event') (r.ev_persons || []).forEach((p) => link(r, p, ensure(r, p, p.pv || r.pv, { rtype: 'watch', grp: 6, role: 'ร่วมจัดกิจกรรม: ' + (r.ev_name || '') + (r.ev_date ? ' (' + r.ev_date + ')' : '') + (p.detail ? ' · ' + p.detail : '') })));
     else if (rt === 'case') (r.suspects || []).forEach((p) => link(r, p, ensure(r, Object.assign({}, p, { passport: p.passport || p.passportNo || '' }), r.pv, { rtype: 'watch', grp: 10, role: 'ผู้ต้องหา: ' + (r.case_subject || r.case_type || '') + (p.role ? ' · ' + p.role : '') })));
     else if (rt === 'place') (r.leaders || []).forEach((p) => {
