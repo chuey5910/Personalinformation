@@ -1165,7 +1165,7 @@ function roleOf(){return (currentUser&&currentUser.role)||'';}
 function roleLabel(u){u=u||currentUser;if(!u)return '';var r=u.role||'officer';return r==='prov_head'?('หน.ส.จว.'+(u.prov?' '+u.prov:'')):(ROLE_LBL[r]||r);}
 function isVerifier(){var r=roleOf();return r==='admin'||r==='desk_head'||r==='prov_head';}
 function isDeskHead(){return roleOf()==='desk_head'||roleOf()==='admin';}
-function canVerify(r){var ro=roleOf();if(ro==='admin')return true;if(ro==='desk_head')return true;/* หน.โต๊ะข่าว กก. ยืนยันได้ทุกรายการเช่นเดียวกับแอดมิน */if(ro==='prov_head')return String(r.pv||'')===String(currentUser.prov||'');return false;}
+function canVerify(r){var ro=roleOf();if(ro==='admin')return true;if(ro==='desk_head')return true;/* เซิร์ฟเวอร์ส่งให้เฉพาะรายการของรหัสโต๊ะข่าว 1-3 และบังคับสิทธิ์อีกชั้น */if(ro==='prov_head')return String(r.pv||'')===String(currentUser.prov||'');return false;}
 function canEditRec(r){if(!currentUser||!r||r._derived)return false;if(canVerify(r))return true;if((r._status||'verified')!=='verified')return r._createdBy===currentUser.username;return !r._edit;}
 function recStatus(r){return (r&&r._status)||'verified';}
 function isActive(r){return !r||recStatus(r)==='verified';}
@@ -1213,7 +1213,7 @@ function delRec(i){if(!isAdmin()){gToast('admin เท่านั้นที�
 // ----- แผงจัดการระบบ (admin) -----
 function escH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function fmtTime(t){if(!t)return '-';var d=new Date(t);if(isNaN(d.getTime()))return escH(t);var p=function(n){return String(n).padStart(2,'0');};return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+(d.getFullYear()+543)+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
-async function renderAdmin(){if(!isVerifier())return;document.querySelectorAll('#tab-admin .adm-only').forEach(function(e){e.style.display=isAdmin()?'':'none';});var rs=document.getElementById('reviewSec');if(rs)rs.style.display=isDeskHead()?'':'none';var sc=document.getElementById('vfScope');if(sc)sc.textContent=roleOf()==='prov_head'?'เฉพาะจังหวัด '+(currentUser.prov||'-'):'ทุกจังหวัด';await pullFromServer(true);renderVerifyQueue();if(isDeskHead())loadLinks().then(renderReview);if(!isAdmin())return;
+async function renderAdmin(){if(!isVerifier())return;document.querySelectorAll('#tab-admin .adm-only').forEach(function(e){e.style.display=isAdmin()?'':'none';});var rs=document.getElementById('reviewSec');if(rs)rs.style.display=isDeskHead()?'':'none';var sc=document.getElementById('vfScope');if(sc)sc.textContent=roleOf()==='prov_head'?'เฉพาะจังหวัด '+(currentUser.prov||'-'):(roleOf()==='desk_head'?'เฉพาะข้อมูลที่บันทึกโดยรหัสโต๊ะข่าว 1–3':'ทุกจังหวัด');await pullFromServer(true);renderVerifyQueue();if(isDeskHead())loadLinks().then(renderReview);if(!isAdmin())return;
   try{
     var uj=await api('/api/users',{headers:apiHeaders(false)});_admUsers=uj.users;
     var pend=uj.users.filter(function(u){return u.status!=='approved';});

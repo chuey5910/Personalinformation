@@ -84,7 +84,7 @@ function saveLinks() { writeJSON(LINKS_FILE, { updatedAt: new Date().toISOString
 // ---------- ระดับสิทธิ์และการยืนยันข้อมูล ----------
 //   officer    เจ้าหน้าที่        บันทึกได้ → เข้าสถานะ "รอยืนยัน" / แก้ไขข้อมูลที่ยืนยันแล้ว → เป็น "ฉบับแก้ไขรอยืนยัน"
 //   prov_head  หน.ส.จว.          ยืนยัน/ส่งกลับ ได้เฉพาะจังหวัดที่ประจำการ (ข้อมูลที่ตนเองบันทึกในจังหวัดตนเอง ไม่ต้องรอยืนยัน)
-//   desk_head  หัวหน้าโต๊ะข่าว กก. ยืนยัน/ส่งกลับ ได้ทุกรายการทุกจังหวัด (เช่นเดียวกับแอดมิน) แต่ลบข้อมูล/จัดการผู้ใช้ไม่ได้
+//   desk_head  หัวหน้าโต๊ะข่าว กก. ยืนยัน/ส่งกลับ เฉพาะข้อมูลที่บันทึก/แก้ไขโดยรหัสของโต๊ะข่าว 1-3 + ตรวจสอบบุคคลซ้ำ (ลบไม่ได้)
 //   admin      แอดมิน             ทุกอย่าง
 // สถานะข้อมูล (_status): 'verified' ใช้งาน/ค้นหาได้ · 'pending' รอยืนยัน · 'returned' ส่งกลับแก้ไข
 const ROLES = ['admin', 'desk_head', 'prov_head', 'officer'];
@@ -94,7 +94,7 @@ function isDeskUser(username) { const x = findUser(username); return !!x && (Str
 function actorOf(r) { return (r._edit && r._edit.by) || r._createdBy || ''; }
 function canVerifyRec(u, r) {
   if (u.role === 'admin') return true;
-  if (u.role === 'desk_head') return true;   // หน.โต๊ะข่าว กก. ยืนยันได้ทุกรายการเช่นเดียวกับแอดมิน
+  if (u.role === 'desk_head') { const a = actorOf(r); return a === u.username || isDeskUser(a); }   // เฉพาะรหัสโต๊ะข่าว 1-3
   if (u.role === 'prov_head') return String(r.pv || '') === String(u.prov || '');
   return false;
 }
