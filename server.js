@@ -22,7 +22,7 @@
  *   GET  /api/me                        → ข้อมูลผู้ใช้ที่ login อยู่
  *   GET  /api/records                   → {ok, records:[...]}            (ทุกคนที่ login)
  *   POST /api/records                   {records:[...]}                  (officer: เพิ่มได้อย่างเดียว / admin: เพิ่ม+แก้ไข)
- *   POST /api/records/delete            {ids:[...]} หรือ {all:true}      (admin เท่านั้น)
+ *   POST /api/records/delete            {ids:[...]} หรือ {all:true}      (admin · หน.โต๊ะข่าว กก. ลบได้เฉพาะ {ids, dup:true} ทะเบียนบุคคลซ้ำ)
  *   GET  /api/users                     → รายชื่อผู้ใช้ทั้งหมด            (admin)
  *   POST /api/users/approve             {id, role?}                      (admin)
  *   POST /api/users/reject              {id}                             (admin — ลบบัญชี)
@@ -552,8 +552,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/records/delete') {
-      if (!isAdmin) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้นที่ลบข้อมูลได้' }); return; }
       const data = JSON.parse(await readBody(req) || '{}');
+      // หน.โต๊ะข่าว กก. ลบได้เฉพาะ "ทะเบียนบุคคลที่ซ้ำ" จากหน้าตรวจสอบบุคคล (dup:true และต้องเป็นบุคคลเฝ้าระวัง/บุคคลสำคัญเท่านั้น)
+      if (!isAdmin) {
+        const okDup = me.role === 'desk_head' && data.dup === true && data.all !== true && Array.isArray(data.ids) && data.ids.length &&
+          data.ids.every((id) => { const r = records.find((x) => x && String(x._id) === String(id)); return r && ['watch', 'vip'].indexOf(r.rtype || 'watch') >= 0; });
+        if (!okDup) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้นที่ลบข้อมูลได้ (หน.โต๊ะข่าว กก. ลบได้เฉพาะทะเบียนบุคคลที่ซ้ำในหน้าตรวจสอบบุคคล)' }); return; }
+      }
       let deleted = 0;
       if (data.all === true) { deleted = records.length; records = []; }
       else {
@@ -563,7 +568,7 @@ const server = http.createServer(async (req, res) => {
         deleted = before - records.length;
       }
       if (deleted) saveRecords();
-      audit('delete_records', me.username, data.all ? ('ลบทั้งหมด ' + deleted + ' รายการ') : ('ลบ ' + deleted + ' รายการ'), req);
+      audit('delete_records', me.username, data.all ? ('ลบทั้งหมด ' + deleted + ' รายการ') : ((data.dup ? 'ลบทะเบียนบุคคลที่ซ้ำ ' : 'ลบ ') + deleted + ' รายการ'), req);
       sendJSON(res, 200, { ok: true, deleted: deleted, total: records.length }); return;
     }
 
