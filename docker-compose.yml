@@ -33,6 +33,7 @@ services:
 
     # ค่าลับและค่าตั้งเพิ่มเติมอ่านจาก secrets/.env (ไม่มีไฟล์ก็รันได้ตามปกติ)
     # ใส่ได้: ADMIN_USER, ADMIN_PASS (เฉพาะตอนสร้าง/รีเซ็ต admin), SESSION_HOURS
+    #         NEWS_API_KEY (รหัสเดียวกับ REPORT_CENTER_API_KEY ของเว็บรายงานข่าว — ใส่แล้วจะดึงข่าวอัตโนมัติ)
     env_file:
       - path: ../secrets/.env
         required: false
@@ -42,6 +43,12 @@ services:
       - PORT=8081
       - DATA_DIR=/data
       - TZ=Asia/Bangkok
+      # ที่อยู่เว็บรายงานข่าวสำหรับลิงก์ "เปิดรายงานต้นฉบับ" (เปิดจากเบราว์เซอร์ผ่าน Tailscale)
+      - NEWS_LINK_URL=http://100.86.87.94:5001
+
+    # ให้คอนเทนเนอร์นี้เรียกเว็บรายงานข่าว (พอร์ต 5001 บน NAS เครื่องเดียวกัน) ผ่านชื่อ host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     logging:
       driver: json-file
