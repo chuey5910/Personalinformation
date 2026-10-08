@@ -577,7 +577,7 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
  <a class="nv" data-nav="list:news:incident" onclick="goNav('list','news','incident')" title="เหตุการณ์ / ข่าวทั่วไป"><span class="tbe">📢</span><span class="nv-t">เหตุการณ์ / ข่าวทั่วไป</span></a>
  <div class="nv-sec">กลุ่ม / องค์กร</div>
  <a class="nv" data-nav="list:org:__grp" onclick="goNav('list','org','__grp')" title="กลุ่ม"><span class="tbe">👥</span><span class="nv-t">กลุ่ม</span></a>
- <a class="nv" data-nav="list:org:__ngo" onclick="goNav('list','org','__ngo')" title="NGO"><span class="tbe">🤝</span><span class="nv-t">NGO</span></a>
+ <a class="nv" data-nav="list:org:__ngo" onclick="goNav('list','org','__ngo')" title="CSOs (NGO)"><span class="tbe">🤝</span><span class="nv-t">CSOs (NGO)</span></a>
  <a class="nv" data-nav="list:org:force" onclick="goNav('list','org','กองกำลังต่างชาติ')" title="กองกำลังต่างชาติ"><span class="tbe">🪖</span><span class="nv-t">กองกำลังต่างชาติ</span></a>
  <a class="nv" data-nav="list:org:co" onclick="goNav('list','org','บริษัท / นิติบุคคล')" title="บริษัท / นิติบุคคล"><span class="tbe">🏢</span><span class="nv-t">บริษัท / นิติบุคคล</span></a>
  <div class="nv-sec">ระบบ</div>
@@ -615,7 +615,7 @@ body.nv-collapsed .nv-tgl{left:calc(var(--nv-c) - 19px);}body.nv-collapsed .nv-t
       <div class="rtype-card" onclick="chooseRtype('activity')"><i class="ti ti-calendar-event"></i><div class="rt"><b>กิจกรรมตามวงรอบ</b><span>งาน/กิจกรรมที่จัดเป็นประจำทุกปี</span></div></div>
       <div class="rtype-card" onclick="chooseRtype('event')"><i class="ti ti-speakerphone"></i><div class="rt"><b>การจัดกิจกรรม</b><span>กิจกรรม/การเคลื่อนไหวครั้งคราวตามประเด็น</span></div></div>
       <div class="rtype-card" onclick="chooseRtype('vehicle')"><i class="ti ti-car"></i><div class="rt"><b>ยานพาหนะ</b><span>ทะเบียนรถ เจ้าของ และประวัติการพบเห็น</span></div></div>
-      <div class="rtype-card" onclick="chooseRtype('org')"><i class="ti ti-users-group"></i><div class="rt"><b>กลุ่ม / องค์กรในพื้นที่</b><span>NGO, กลุ่มมวลชน, กลุ่มปัญหา และแกนนำ</span></div></div>
+      <div class="rtype-card" onclick="chooseRtype('org')"><i class="ti ti-users-group"></i><div class="rt"><b>กลุ่ม / องค์กรในพื้นที่</b><span>CSOs (NGO), กลุ่มมวลชน, กลุ่มปัญหา และแกนนำ</span></div></div>
       <div class="rtype-card" id="rtcard_border" style="display:none;border-color:#E24B4A;" onclick="chooseRtype('border')"><i class="ti ti-alert-triangle" style="color:#E24B4A;"></i><div class="rt"><b>สถานการณ์ชายแดน</b><span>บันทึกการปะทะ/สู้รบตามแนวชายแดน (เฉพาะจังหวัดชายแดน)</span></div></div>
     </div>
   </div>
@@ -1743,7 +1743,7 @@ function subFilterCfg(rt){
   if(rt==='event'){var en={};recs.forEach(function(x){if(x&&x.rtype==='event'&&x.ev_name&&!x._deleted)en[x.ev_name]=(en[x.ev_name]||0)+1;});return {label:'ชื่อกิจกรรม',all:'ทุกกิจกรรม',field:'ev_name',icon:'ti-speakerphone',opts:Object.keys(en).sort().map(function(k){return [k,k+' ('+en[k]+')'];})};}
   if(rt==='case')return {label:'ประเภทคดี',all:'ทุกประเภทคดี',field:'case_type',icon:'ti-folder',opts:[['คดีอุกฉกรรจ์','คดีอุกฉกรรจ์'],['คดีที่น่าสนใจ','คดีที่น่าสนใจ']]};
   if(rt==='border')return {label:'รูปแบบการสู้รบ',all:'ทุกรูปแบบการสู้รบ',field:'bd_combat',icon:'ti-swords',opts:BD_COMBAT.map(function(v){return [v,v];})};
-  if(rt==='org'){var vals2=ORG_STATUS.slice();recs.forEach(function(r){if((r.rtype||'')==='org'&&r.org_status&&vals2.indexOf(r.org_status)<0)vals2.push(r.org_status);});return {label:'สถานะองค์กร',all:'ทุกสถานะ',field:'org_status',icon:'ti-affiliate',opts:[['__grp','กลุ่ม (กลุ่มปัญหา / กลุ่มอิสระ / อื่นๆ)'],['__ngo','NGO (มูลนิธิ / สมาคม)']].concat(vals2.map(function(v){return [v,v];}))};}
+  if(rt==='org'){var vals2=ORG_STATUS.slice();recs.forEach(function(r){if((r.rtype||'')==='org'&&r.org_status&&vals2.indexOf(r.org_status)<0)vals2.push(r.org_status);});return {label:'สถานะองค์กร',all:'ทุกสถานะ',field:'org_status',icon:'ti-affiliate',opts:[['__grp','กลุ่ม (กลุ่มปัญหา / กลุ่มอิสระ / อื่นๆ)'],['__ngo','CSOs (NGO) (มูลนิธิ / สมาคม)']].concat(vals2.map(function(v){return [v,v];}))};}
   return null;
 }
 function setSubFilter(which){
@@ -1921,7 +1921,7 @@ var LIST_VIEWS={
  // ---- กลุ่ม / องค์กร (กลุ่มปัญหา กลุ่มอิสระ) ----
  'org':{head:lvTh([['ชื่อกลุ่ม','15%'],['ประเด็นขับเคลื่อนหลัก','14%'],['มวลชน','6%'],['แกนนำ','13%'],['ประเด็นใหม่ / ข้อเรียกร้องล่าสุด','15%'],['พรรคการเมือง','9%'],['วงรอบการเคลื่อนไหว','16%']]),
   row:function(e){var r=e.r;var m=parseInt(String(r.org_members||'').replace(/\D/g,''))||0;var lead=(r.persons||[]).filter(function(p){return /แกนนำ|ผู้ประสานงาน/.test(p.level||'');});if(!lead.length)lead=(r.persons||[]).slice(0,2);return '<tr>'+lvName(e)+'<td>'+(escH(r.org_issue||'')||'-')+(r.org_status?'<br><span class="lk-pv">'+escH(r.org_status)+'</span>':'')+'</td><td>'+(r.org_members?(m>250?'<span class="mass-hi">'+escH(r.org_members)+'</span>':escH(r.org_members)):'-')+'</td><td>'+lvPersons(lead,2)+'</td><td>'+(lvTxt(r.org_issueNew,140)||'-')+'</td><td>'+(escH(r.org_party||'')||'-')+'</td><td>'+(lvTxt(r.org_cycle,80)||'-')+'</td>'+lvBtns(e)+'</tr>';}},
- // ---- NGO (มูลนิธิ / สมาคม) ----
+ // ---- CSOs (NGO) (มูลนิธิ / สมาคม) ----
  'org:__ngo':{head:lvTh([['ชื่อองค์กร','17%'],['สถานะ','10%'],['ประเด็นที่ทำงาน','17%'],['พื้นที่','11%'],['แหล่งทุน / การสนับสนุน','16%'],['ผู้ประสานงาน','17%']]),
   row:function(e){var r=e.r;var a=r.addrMain||{};var co=(r.persons||[]).filter(function(p){return /ประสานงาน|แกนนำ/.test(p.level||'');});if(!co.length)co=(r.persons||[]).slice(0,2);return '<tr>'+lvName(e)+'<td>'+(escH(r.org_status||'')||'-')+'</td><td>'+(escH(r.org_issue||'')||'-')+(r.org_target?'<br><span class="lk-pv">เป้าหมาย: '+escH(r.org_target)+'</span>':'')+'</td><td>'+escH(r.pv||'-')+(a.dist?'<br><span class="lk-pv">อ.'+escH(a.dist)+'</span>':'')+'</td><td>'+(lvTxt(r.org_support,100)||'-')+'</td><td>'+lvPersons(co,2)+'</td>'+lvBtns(e)+'</tr>';}},
  // ---- กองกำลังต่างชาติ ----
