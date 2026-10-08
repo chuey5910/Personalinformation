@@ -1479,13 +1479,13 @@ function personRecs(r){var m=personMap().get(r);return (m||[r]).slice().sort(fun
 // รวมแถวของคนเดียวกันที่อยู่หลายกลุ่ม: 1 คน = 1 แถว (เรียงตามกลุ่มแรกที่ตรงเงื่อนไข)
 function toEntries(rows){var seen=new Map(),out=[];rows.forEach(function(r){if((r.rtype||'')==='vehicle'){var vg=vehGroupOf(r);if(seen.has(vg))return;var ev={r:vg.all[0],all:vg.all,vg:vg};seen.set(vg,ev);out.push(ev);return;}if((r.rtype||'watch')!=='watch'){out.push({r:r,all:[r]});return;}var all=personRecs(r);var head=all[0];if(seen.has(head)){var e=seen.get(head);if((parseInt(r.grp)||99)<(parseInt(e.r.grp)||99))e.r=r;return;}var e2={r:r,all:all};seen.set(head,e2);out.push(e2);});return out;}
 function nwSortKey(r){return String(r.nw_start||r.nw_verifiedAt||r._createdAt||'');}
-// วันที่ของรายการ ใช้เรียงจากล่าสุดไปอดีต: วันเกิดเหตุ/วันจัดกิจกรรม/วันรายงาน → วันเคลื่อนไหวล่าสุดของบุคคล → วันที่บันทึก/แก้ไข
+// วันที่ของรายการ ใช้เรียงจากล่าสุดไปอดีต: วันเกิดเหตุ/วันจัดกิจกรรม/วันรายงาน → วันเคลื่อนไหวล่าสุดของบุคคล → วันที่บันทึก/แก้ไข (เฉพาะประเภทที่ไม่มีวันเกิดเหตุ)
 var ISO_D=/^\d{4}-\d{2}-\d{2}/;
 function recDateKey(r){var rt=r.rtype||'watch',d='';if(rt==='news')return nwSortKey(r);
  if(rt==='event')d=r.ev_date;else if(rt==='case')d=r.case_date;else if(rt==='border')d=r.bd_date;else if(rt==='activity')d=r.act_date;else if(rt==='place')d=r.pl_surveyDate;
  else if(rt==='vehicle'){var vr=vehReports({all:[r]});d=vr.length?vr[0].date:'';}
  else if(rt==='watch'||rt==='vip'){(r.news||[]).forEach(function(o){var x=String(o&&o.date||'');if(ISO_D.test(x)&&x>d)d=x;});}
- d=String(d||'');if(ISO_D.test(d))return d.slice(0,10);return String(r._updatedAt||r._verifiedAt||r._createdAt||'').slice(0,10);}
+ d=String(d||'');if(ISO_D.test(d))return d.slice(0,10);if(rt==='event'||rt==='case'||rt==='border'||rt==='activity')return '';return String(r._updatedAt||r._verifiedAt||r._createdAt||'').slice(0,10);}  // เรื่องที่มีวันเกิดเหตุ/วันจัด: ไม่ทราบวัน → ไว้ท้ายสุด (ห้ามใช้วันที่บันทึก/วันเอกสารแทน)
 // ทุกเมนู/ทุกการค้นหา: เรียงจากล่าสุดไปอดีตเสมอ (วันเดียวกัน → ลำดับเดิม จังหวัด/ประเภท/กลุ่ม/ชื่อ)
 function sortEntries(es){var order=new Map();sortRows(es.map(function(e){return e.r;})).forEach(function(r,i){order.set(r,i);});var K=new Map();es.forEach(function(e){var k='';(e.all||[e.r]).forEach(function(x){var v=recDateKey(x);if(v>k)k=v;});K.set(e,k);});
  return es.slice().sort(function(a,b){var ka=K.get(a),kb=K.get(b);if(ka!==kb)return ka<kb?1:-1;if(a.r.rtype==='news'&&b.r.rtype==='news'){var va=String(a.r.nw_verifiedAt||''),vb=String(b.r.nw_verifiedAt||'');if(va!==vb)return va<vb?1:-1;}return order.get(a.r)-order.get(b.r);});}
