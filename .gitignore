@@ -1,0 +1,4 @@
+# ข้อมูลจริง (อ่อนไหว) — ห้าม commit ขึ้น git เด็ดขาด
+data/
+node_modules/
+*.log
