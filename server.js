@@ -115,7 +115,7 @@ function viewOf(u, r) {
   if (r._edit && !(canVerifyRec(u, r) || r._edit.by === u.username)) { const o = Object.assign({}, r); delete o._edit; return o; }
   return r;
 }
-function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; if (t === 'event') return [r.ev_name, r.ev_date].filter(Boolean).join(' ') || r._id || ''; if (t === 'news') return [r.nw_ref, r.nw_title].filter(Boolean).join(' ') || r._id || ''; return r._id || ''; }
+function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip' || t === 'bgcheck') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; if (t === 'event') return [r.ev_name, r.ev_date].filter(Boolean).join(' ') || r._id || ''; if (t === 'news') return [r.nw_ref, r.nw_title].filter(Boolean).join(' ') || r._id || ''; return r._id || ''; }
 // ---- ทะเบียนบุคคลต้องมีทุกคนที่มีข้อมูลในระบบ: สร้างอัตโนมัติให้ชื่อคนในรายการอื่นที่ยังไม่มีทะเบียน แล้วผูก pref กลับ ----
 const AP_PFX = /^(นางสาว|นาวสาว|นาง|นาย|น\.ส\.)\s*/;
 const apNk = (s) => String(s || '').replace(AP_PFX, '').replace(/\s+/g, '');
@@ -137,7 +137,7 @@ function ensurePersons() {
   const byId = new Map(), pidx = new Map(), nidx = new Map();
   records.forEach((r) => {
     if (!r || !r._id) return; byId.set(r._id, r);
-    if (!apActive(r) || ['watch', 'vip'].indexOf(r.rtype || 'watch') < 0) return;
+    if (!apActive(r) || ['watch', 'vip', 'bgcheck'].indexOf(r.rtype || 'watch') < 0) return;
     [apNk((r.fn || '') + (r.ln || '')), apNk(((r.title || '') + (r.fn || '')) + (r.ln || ''))].forEach((k) => { const key = k + '|' + r.pv; if (!pidx.has(key)) pidx.set(key, r); });
     if (r.nid) nidx.set(r.nid, r); if (r.passport) nidx.set('PP' + r.passport, r);
   });
@@ -289,7 +289,7 @@ async function syncNews(who) {
         // ประวัติการปรากฏในรายงานข่าว ของแต่ละคน (ทั้งคนเดิมในทะเบียนและคนที่สร้างใหม่) — 1 แถวต่อ 1 รายงาน
         const tag = 'news:' + nw._src.id;
         nw.nw_persons.forEach((p) => {
-          const w = p.pref && records.find((x) => x && x._id === p.pref); if (!w || ['watch', 'vip'].indexOf(w.rtype || 'watch') < 0) return;
+          const w = p.pref && records.find((x) => x && x._id === p.pref); if (!w || ['watch', 'vip', 'bgcheck'].indexOf(w.rtype || 'watch') < 0) return;
           const auto0 = newsAutoRole(nw, p);
           const row = { date: nsThDate(nw.nw_start), who: [p.detail, p.group].filter(Boolean).join(' · '), role: (nw.nw_kindLabel ? nw.nw_kindLabel + ': ' : '') + nw.nw_title, cat: nw.nw_probTypes, move: 'รายงานข่าว ' + (nw.nw_ref || '#' + nw._src.id) + (nw.nw_place ? ' · ' + nw.nw_place : ''), src: tag };
           w.news = (w.news || []).filter((z) => z && z.src !== tag && !(z.role === auto0 && !z.date)).concat([row]); w._updatedAt = t0;
@@ -349,7 +349,7 @@ function cleanRecordNames(r) {
   if (!r || typeof r !== 'object') return false;
   let changed = false;
   const rt = r.rtype || 'watch';
-  if (rt === 'watch' || rt === 'vip') {
+  if (rt === 'watch' || rt === 'vip' || rt === 'bgcheck') {
     const p = splitPrefix(r.fn);
     if (p) { r.fn = p.rest; if (!r.title) r.title = p.prefix; changed = true; }
   }
@@ -675,7 +675,7 @@ const server = http.createServer(async (req, res) => {
       // หน.โต๊ะข่าว กก. ลบได้เฉพาะ "ทะเบียนบุคคลที่ซ้ำ" จากหน้าตรวจสอบบุคคล (dup:true และต้องเป็นบุคคลเฝ้าระวัง/บุคคลสำคัญเท่านั้น)
       if (!isAdmin) {
         const okDup = me.role === 'desk_head' && data.dup === true && data.all !== true && Array.isArray(data.ids) && data.ids.length &&
-          data.ids.every((id) => { const r = records.find((x) => x && String(x._id) === String(id)); return r && ['watch', 'vip'].indexOf(r.rtype || 'watch') >= 0; });
+          data.ids.every((id) => { const r = records.find((x) => x && String(x._id) === String(id)); return r && ['watch', 'vip', 'bgcheck'].indexOf(r.rtype || 'watch') >= 0; });
         if (!okDup) { sendJSON(res, 403, { ok: false, error: 'admin เท่านั้นที่ลบข้อมูลได้ (หน.โต๊ะข่าว กก. ลบได้เฉพาะทะเบียนบุคคลที่ซ้ำในหน้าตรวจสอบบุคคล)' }); return; }
       }
       let deleted = 0;
