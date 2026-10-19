@@ -27,6 +27,8 @@
  *   POST /api/users/approve             {id, role?}                      (admin)
  *   POST /api/users/reject              {id}                             (admin — ลบบัญชี)
  *   GET  /api/audit?limit=300           → บันทึกการใช้งานล่าสุด           (admin)
+ *   POST /api/files                     {name,type,data(base64)}         (ทุกคนที่ login — แนบไฟล์เอกสาร สูงสุด 15MB/ไฟล์: PDF / รูปภาพ)
+ *   GET  /api/files/<id>                → ไฟล์เอกสาร (ผู้ที่เห็นรายการที่อ้างถึงไฟล์ หรือผู้อัปโหลด)
  *   GET  /api/newsync                   → สถานะการดึงข้อมูลจากเว็บรายงานข่าว (admin · หน.โต๊ะข่าว กก.)
  *   POST /api/newsync/run               → ดึงข้อมูลจากเว็บรายงานข่าวทันที     (admin · หน.โต๊ะข่าว กก.)
  */
@@ -45,6 +47,10 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const LINKS_FILE = path.join(DATA_DIR, 'links.json'); // ผลการยืนยันของ admin ว่าเป็นคนเดียวกัน/คนละคน
 const AUDIT_FILE = path.join(DATA_DIR, 'audit.log');
+const FILES_DIR = path.join(DATA_DIR, 'files'); // ไฟล์เอกสารแนบ (เช่น สำเนาบัตร ทะเบียนบ้าน คำร้อง)
+const FILE_MAX = 15 * 1024 * 1024;
+const FILE_TYPES = { 'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic', 'image/heif': '.heif' };
+const FILE_ID_RE = /^[a-f0-9]{24}\.(pdf|jpg|png|webp|heic|heif)$/;
 // อายุ session: ไม่มีความเคลื่อนไหว 30 นาที หรือเข้าระบบครบ 3 ชั่วโมง → ต้องเข้าระบบใหม่ (ตั้งค่าได้ด้วย SESSION_IDLE_MIN / SESSION_HOURS)
 const SESSION_IDLE_MIN = parseFloat(process.env.SESSION_IDLE_MIN || '30');
 const SESSION_HOURS = parseFloat(process.env.SESSION_HOURS || '3');
@@ -593,6 +599,32 @@ const server = http.createServer(async (req, res) => {
       saveSessions();
       audit('change_password', me.username, 'เปลี่ยนรหัสผ่าน', req);
       sendJSON(res, 200, { ok: true }); return;
+    }
+
+    // ----- ไฟล์เอกสารแนบ -----
+    if (req.method === 'POST' && url.pathname === '/api/files') {
+      const d = JSON.parse(await readBody(req) || '{}');
+      const ext = FILE_TYPES[String(d.type || '').toLowerCase()];
+      if (!ext) { sendJSON(res, 400, { ok: false, error: 'รองรับเฉพาะไฟล์ PDF หรือรูปภาพ (JPG, PNG, WEBP, HEIC)' }); return; }
+      const buf = Buffer.from(String(d.data || '').replace(/^data:[^,]*,/, ''), 'base64');
+      if (!buf.length) { sendJSON(res, 400, { ok: false, error: 'ไฟล์ว่าง' }); return; }
+      if (buf.length > FILE_MAX) { sendJSON(res, 400, { ok: false, error: 'ไฟล์ใหญ่เกิน 15MB' }); return; }
+      fs.mkdirSync(FILES_DIR, { recursive: true });
+      const id = crypto.randomBytes(12).toString('hex') + ext;
+      const meta = { id, name: String(d.name || 'file').slice(0, 200), type: String(d.type).toLowerCase(), size: buf.length, by: me.username, at: new Date().toISOString() };
+      fs.writeFileSync(path.join(FILES_DIR, id), buf); fs.writeFileSync(path.join(FILES_DIR, id + '.json'), JSON.stringify(meta));
+      audit('upload_file', me.username, 'แนบไฟล์ ' + meta.name + ' (' + Math.round(buf.length / 1024) + ' KB)', req);
+      sendJSON(res, 200, { ok: true, file: { id, name: meta.name, type: meta.type, size: meta.size } }); return;
+    }
+    if (req.method === 'GET' && url.pathname.indexOf('/api/files/') === 0) {
+      const id = url.pathname.slice('/api/files/'.length);
+      if (!FILE_ID_RE.test(id) || !fs.existsSync(path.join(FILES_DIR, id))) { sendJSON(res, 404, { ok: false, error: 'ไม่พบไฟล์' }); return; }
+      const meta = loadJSON(path.join(FILES_DIR, id + '.json'), {});
+      const allowed = meta.by === me.username || records.some((r) => r && visibleTo(me, r) && JSON.stringify(r).indexOf(id) >= 0);
+      if (!allowed) { sendJSON(res, 403, { ok: false, error: 'ไม่มีสิทธิ์เปิดไฟล์นี้' }); return; }
+      res.writeHead(200, { 'Content-Type': meta.type || 'application/octet-stream', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff',
+        'Content-Disposition': 'inline; filename*=UTF-8\'\'' + encodeURIComponent(meta.name || id) });
+      fs.createReadStream(path.join(FILES_DIR, id)).pipe(res); return;
     }
 
     if (req.method === 'GET' && url.pathname === '/api/records') {
