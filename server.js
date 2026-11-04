@@ -827,6 +827,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// ตอนเริ่มระบบ: บุคคลในรายการที่นำเข้าด้วยไฟล์ (import-data-to-nas.sh) ยังไม่มีทะเบียน → สร้าง/ผูกให้ทันที
+try { const a0 = ensurePersons(); if (a0) { saveRecords(); console.log('  สร้างทะเบียนบุคคลอัตโนมัติ ' + a0 + ' รายการ (ตอนเริ่มระบบ)'); } } catch (e) { console.log('  ⚠ สร้างทะเบียนบุคคลอัตโนมัติไม่สำเร็จ: ' + e.message); }
 server.listen(PORT, HOST, () => {
   console.log('SB1 Server พร้อมใช้งาน');
   console.log('  หน้าเว็บ:  http://' + (HOST === '0.0.0.0' ? '<server-ip>' : HOST) + ':' + PORT + '/');
