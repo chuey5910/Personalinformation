@@ -172,11 +172,13 @@ function ensurePersons() {
       if (p.social && /^https?:/.test(p.social)) w.social = { facebook: /facebook/.test(p.social) ? p.social : '', ig: '', x: '', linkedin: '', youtube: '', tiktok: '', podcast: '', website: '', otherName: /facebook/.test(p.social) ? '' : 'Social Media', otherUrl: /facebook/.test(p.social) ? '' : p.social };
       w._createdBy = parent._createdBy || 'auto'; w._createdAt = now; w._autoFrom = parent._id;
       if ((parent._status || 'verified') === 'verified') { w._status = 'verified'; w._verifiedBy = 'auto'; w._verifiedAt = now; } else w._status = 'pending';
+      if (/^data:image\//.test(p.photo || '')) w.photo = p.photo;
       records.push(w); byId.set(id, w); pidx.set(k, w); if (w.nid) nidx.set(w.nid, w); if (w.passport) nidx.set('PP' + w.passport, w); created++;
     } else if (w.rtype === 'watch' && spec.role && !(w.news || []).some((z) => z.role === spec.role)) {
       if (String(w._id).indexOf('w16_') !== 0) return w._id;
       w.news = (w.news || []).concat([{ date: '', who: '', role: spec.role, cat: '', move: '' }]);
     }
+    if (!w.photo && /^data:image\//.test(p.photo || '') && String(w._id).indexOf('w16_') === 0) { w.photo = p.photo; w._updatedAt = now; }
     return w._id;
   }
   const link = (parent, p, id) => { if (id && p.pref !== id) { p.pref = id; parent._updatedAt = now; } };
@@ -193,11 +195,11 @@ function ensurePersons() {
     else if (rt === 'event') (r.ev_persons || []).forEach((p) => link(r, p, ensure(r, p, p.pv || r.pv, { rtype: 'watch', grp: 6, role: 'ร่วมจัดกิจกรรม: ' + (r.ev_name || '') + (r.ev_date ? ' (' + r.ev_date + ')' : '') + (p.detail ? ' · ' + p.detail : '') })));
     else if (rt === 'case') (r.suspects || []).forEach((p) => link(r, p, ensure(r, Object.assign({}, p, { passport: p.passport || p.passportNo || '' }), r.pv, { rtype: 'watch', grp: 10, role: 'ผู้ต้องหา: ' + (r.case_subject || r.case_type || '') + (p.role ? ' · ' + p.role : '') })));
     else if (rt === 'place') (r.leaders || []).forEach((p) => {
-      const rl = p.role || ''; const role = (rl || 'ผู้นำ/บทบาท') + ' (' + (r.pl_name || '') + ')'; let spec;
-      if (/อาชญากรรมข้ามชาติ/.test(r.pl_type || '')) spec = { rtype: 'watch', grp: 16, sub: /คุมพื้นที่/.test(rl) ? 'ผู้คุมพื้นที่' : '', role: role };
+      const rl = p.role || ''; const role = (rl || 'ผู้นำ/บทบาท') + (p.pos ? ' · ' + p.pos : '') + ' (' + (r.pl_name || '') + ')'; let spec;
+      if (/อาชญากรรมข้ามชาติ/.test(r.pl_type || '')) spec = { rtype: 'watch', grp: 16, sub: /คุมพื้นที่|อิทธิพล/.test(rl) ? 'ผู้คุมพื้นที่' : /ลงทุน|กลุ่มทุน|เช่าพื้นที่/.test(rl) ? 'กลุ่มทุน/ผู้ลงทุน' : rl ? 'เครือข่าย/ผู้เกี่ยวข้อง' : '', role: role };
       else if (AP_RELIG.test(r.pl_type || '')) spec = { rtype: 'watch', grp: 17, sub: /อิหม่าม/.test(rl) ? 'โต๊ะอิหม่าม/อิหม่าม' : /คอเต็บ/.test(rl) ? 'คอเต็บ' : /บิลาล/.test(rl) ? 'บิลาล' : /ราไบ/.test(rl) ? 'ราไบ' : /ผู้นำ|ผู้ดูแล|กรรมการ/.test(rl) ? 'ผู้นำ/ผู้ดูแล/กรรมการ' : 'อื่นๆ', role: role };
       else spec = { rtype: 'watch', grp: 8, role: role };
-      link(r, p, ensure(r, p, r.pv, spec)); });
+      link(r, p, ensure(r, p, p.pv || r.pv, spec)); });
     else if (rt === 'border') (r.bd_persons || []).forEach((p) => link(r, p, ensure(r, p, r.pv, { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: [p.role, p.side].filter(Boolean).join(' · ') })));
     else if (rt === 'vehicle' && r.owner_name) { const id = ensure(r, { name: r.owner_name, nid: r.owner_nid, addr: r.owner_addr, pref: r.owner_pref }, r.pv, { rtype: 'watch', grp: 6, role: 'เจ้าของรถ ' + [r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '') }); if (id && r.owner_pref !== id) { r.owner_pref = id; r._updatedAt = now; } }
   });
