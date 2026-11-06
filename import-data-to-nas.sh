@@ -33,7 +33,7 @@ cp \$S/records-new.json $DATA/records.json
 for a in \$S/audit-*.log; do [ -f \"\$a\" ] && cat \"\$a\" >> $DATA/audit.log; done
 chown 1000:1000 $DATA/records.json $DATA/links.json 2>/dev/null || true
 rm -rf \$S; cd $APP && docker compose restart >/dev/null 2>&1; sleep 3
-docker compose logs --tail 8 | grep -o -E \"สร้างทะเบียนบุคคลอัตโนมัติ [0-9]+ รายการ|ตอนนี้ [0-9]+ รายการ\" | tail -2
+docker compose logs --since 1m | grep -o -E \"สร้างทะเบียนบุคคลอัตโนมัติ [0-9]+ รายการ|ตอนนี้ [0-9]+ รายการ\" | tail -2
 '"
 # ส่งแล้วลบไฟล์ที่ส่งออกจาก Downloads กันส่งซ้ำ/ส่งไฟล์เก่ารอบหน้า (audit log ถูกต่อท้ายบน NAS แล้ว)
 rm -f records-new.json links-new.json audit-*.log
