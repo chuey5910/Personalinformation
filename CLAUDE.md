@@ -13,6 +13,8 @@
 - ก่อนส่งคำสั่ง deploy ถ้ามีเรื่องที่รอคำตอบจากผู้ใช้ ให้ถามให้ครบก่อน แล้วค่อยส่งโค้ด
 - `docker compose restart` **ไม่ทำให้โค้ดใหม่ทำงาน** เพราะไฟล์ถูก COPY เข้า image ต้อง `--build` เท่านั้น
 - ผู้ใช้ NAS: `Chuey5910@100.86.87.94` (Tailscale) — ห้ามแนะนำ port forwarding
+- ส่งสคริปต์นำเข้าที่มีข้อมูลส่วนบุคคล: การ์ดแนบไฟล์บันทึกลง Mac ไม่ได้ → เข้ารหัสไว้ใน `tools/secure/<ชื่อ>.enc` แล้วให้ผู้ใช้ `git pull` + `node ~/Personalinformation/tools/decrypt.js <ชื่อ> <รหัส>` (ให้รหัสในแชตเท่านั้น) · ห้าม commit สคริปต์ที่มีข้อมูลส่วนบุคคลแบบไม่เข้ารหัส · ใช้เสร็จลบไฟล์ .enc ออก
+- import-data-to-nas.sh หยุดเองถ้า records-new.json เก่ากว่า records-nas.json และลบไฟล์ที่ส่งแล้วออกจาก Downloads · ถ้าเผลอส่งไฟล์เก่าทับ ใช้ `tools/recover-import.sh` (รวมไฟล์สำรองก่อนนำเข้ากับข้อมูลปัจจุบัน)
 - `scp`/SFTP ถูกจำกัดบน NAS ให้ใช้ `cat file | ssh host "tar -xzf - -C dir"`; sudo ต้องใช้ `ssh -t`
 
 ## วิธีคุยกับผู้ใช้
