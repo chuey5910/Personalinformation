@@ -19,4 +19,4 @@ RB="$(ls "$W"/backups/records-before-import-*.json)"; LB="$(ls "$W"/backups/link
 rm -f "$DL"/records-new.json "$DL"/links-new.json "$DL"/audit-*.log
 node "$HERE/recover-merge.js" "$RB" "$W/records.json" "${LB:-/dev/null}" "$W/links.json" "$DL"
 rm -rf "$W"
-echo "✓ เสร็จ (ยังไม่ได้ส่งขึ้น NAS) — แคปผลด้านบนส่งให้ตรวจก่อน"
+echo "✓ เสร็จ (ยังไม่ได้ส่งขึ้น NAS) — แคปผลด้านบนส่งให้ตรวจก่อน · ตอนส่งขึ้น NAS ใช้:  LINKS=1 ./import-data-to-nas.sh"

@@ -17,7 +17,8 @@ if [ -f records-nas.json ] && [ records-nas.json -nt records-new.json ]; then
   echo "✗ หยุด: records-new.json เก่ากว่า records-nas.json ที่ดึงล่าสุด — สคริปต์นำเข้ารอบนี้ยังไม่ได้รัน (หรือรันไม่สำเร็จ) ไม่ส่งไฟล์เก่าขึ้น NAS"; exit 1
 fi
 N="$(node -e "console.log(JSON.parse(require('fs').readFileSync('records-new.json','utf8')).records.length)")"
-FILES="records-new.json"; [ -f links-new.json ] && FILES="$FILES links-new.json"
+# links-new.json (ผลยืนยันคนเดียวกัน/คนละคน) ส่งเฉพาะเมื่อสั่ง LINKS=1 (ตอนกู้คืน) — สคริปต์นำเข้าทั่วไปไม่ได้ดึง links จาก NAS ถ้าส่งไปจะทับผลยืนยันทั้งหมด
+FILES="records-new.json"; [ "${LINKS:-0}" = "1" ] && [ -f links-new.json ] && FILES="$FILES links-new.json"
 for f in audit-*.log; do [ -f "$f" ] && FILES="$FILES $f"; done
 echo "== 1/2 ส่งไฟล์ไป NAS ($FILES = $N รายการ) — ใส่รหัส NAS ครั้งที่ 1 =="
 COPYFILE_DISABLE=1 tar -czf - $FILES 2>/dev/null | ssh "$NAS" "rm -rf /tmp/sb1-import && mkdir -p /tmp/sb1-import && tar -xzf - -C /tmp/sb1-import 2>/dev/null"
