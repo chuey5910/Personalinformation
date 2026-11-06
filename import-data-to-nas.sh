@@ -28,6 +28,6 @@ cp \$S/records-new.json $DATA/records.json
 for a in \$S/audit-*.log; do [ -f \"\$a\" ] && cat \"\$a\" >> $DATA/audit.log; done
 chown 1000:1000 $DATA/records.json $DATA/links.json 2>/dev/null || true
 rm -rf \$S; cd $APP && docker compose restart >/dev/null 2>&1; sleep 3
-docker compose logs --tail 5 | grep -o \"ตอนนี้ [0-9]* รายการ\" | tail -1
+docker compose logs --tail 8 | grep -o -E \"สร้างทะเบียนบุคคลอัตโนมัติ [0-9]+ รายการ|ตอนนี้ [0-9]+ รายการ\" | tail -2
 '"
-echo "✓ เสร็จ — บรรทัดบนต้องเป็น \"ตอนนี้ $N รายการ\" แล้วเปิด http://${NAS#*@}:8081/ กด Cmd+Shift+R"
+echo "✓ เสร็จ — บรรทัดบนต้องเป็น \"ตอนนี้ $N รายการ\" (ถ้ามีบรรทัด \"สร้างทะเบียนบุคคลอัตโนมัติ X รายการ\" ตัวเลขจะมากกว่า $N เท่ากับ X) แล้วเปิด http://${NAS#*@}:8081/ กด Cmd+Shift+R"
