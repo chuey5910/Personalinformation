@@ -1,0 +1,6 @@
+data/
+node_modules/
+.git/
+*.log
+setup-macos-service.sh
+README.md

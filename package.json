@@ -1,0 +1,13 @@
+{
+  "name": "sb1-webapp",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SB1 Web App — ระบบจัดเก็บข้อมูล สบ.1 (17 จังหวัดภาคเหนือ) เก็บข้อมูลบน CHUEY-Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
