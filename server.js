@@ -141,13 +141,13 @@ function carryPrefs(ex, r) {
 }
 function ensurePersons() {
   const now = new Date().toISOString();
-  const byId = new Map(), pidx = new Map(), nidx = new Map(), anyIdx = new Map();   // anyIdx = ชื่อ (ทุกจังหวัด) ใช้กับห้องสมุด
+  const byId = new Map(), pidx = new Map(), nidx = new Map(), anyIdx = new Map();   // anyIdx = ชื่อบุคคลสำคัญ (ทุกจังหวัด) ใช้กับห้องสมุด
   records.forEach((r) => {
     if (!r || !r._id) return; byId.set(r._id, r);
     if (!apActive(r) || ['watch', 'vip', 'bgcheck'].indexOf(r.rtype || 'watch') < 0) return;
     [apNk((r.fn || '') + (r.ln || '')), apNk(((r.title || '') + (r.fn || '')) + (r.ln || ''))].forEach((k) => { const key = k + '|' + r.pv; if (!pidx.has(key)) pidx.set(key, r); });
     if (r.nid) nidx.set(r.nid, r); if (r.passport) nidx.set('PP' + r.passport, r);
-    const ak = apNk((r.fn || '') + (r.ln || '')); if (ak) { const o = anyIdx.get(ak); if (!o || (o.rtype !== 'vip' && r.rtype === 'vip')) anyIdx.set(ak, r); }
+    const ak = apNk((r.fn || '') + (r.ln || '')); if (ak && r.rtype === 'vip' && !anyIdx.has(ak)) anyIdx.set(ak, r);   // ห้องสมุดผูกเฉพาะการ์ดบุคคลสำคัญ (ผู้ใช้เลือก)
   });
   let created = 0;
   function ensure(parent, p, pv, spec) {
@@ -155,7 +155,7 @@ function ensurePersons() {
     if (!nm || AP_NONAME.test(nm)) return '';
     if (p.pref && byId.has(p.pref) && apActive(byId.get(p.pref))) return '';
     const k = apNk(nm) + '|' + pv;
-    let w = (p.nid && nidx.get(p.nid)) || (p.passport && nidx.get('PP' + p.passport)) || pidx.get(k) || (spec.anyPv ? anyIdx.get(apNk(nm)) : null);
+    let w = (p.nid && nidx.get(p.nid)) || (p.passport && nidx.get('PP' + p.passport)) || (spec.anyPv ? anyIdx.get(apNk(nm)) : pidx.get(k));
     const id = w ? w._id : 'w16_' + crypto.createHash('md5').update(k).digest('hex').slice(0, 12);
     if (!w) w = byId.get(id);
     if (!w) {
@@ -203,7 +203,7 @@ function ensurePersons() {
       else spec = { rtype: 'watch', grp: 8, role: role };
       link(r, p, ensure(r, p, p.pv || r.pv, spec)); });
     else if (rt === 'border') (r.bd_persons || []).forEach((p) => link(r, p, ensure(r, p, r.pv, { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: [p.role, p.side].filter(Boolean).join(' · ') })));
-    else if (rt === 'library') (r.lib_persons || []).forEach((p) => {   // ห้องสมุด: หาการ์ดเดิมจากชื่อ (ทุกจังหวัด) ไม่มี → สร้างบุคคลสำคัญ
+    else if (rt === 'library') (r.lib_persons || []).forEach((p) => {   // ห้องสมุด: หาการ์ดบุคคลสำคัญเดิมจากชื่อ (ทุกจังหวัด) ไม่มี → สร้างบุคคลสำคัญ (ไม่ผูกการ์ดกลุ่มอื่น)
       const ck = VIP_CAT_LABEL[p.vipCat] ? p.vipCat : 'polit';
       link(r, p, ensure(r, p, p.pv || '', { rtype: 'vip', cat: ck, catLabel: VIP_CAT_LABEL[ck], role: p.position || ('มีชื่อในเอกสาร: ' + (r.lib_title || '')), anyPv: true })); });
     else if (rt === 'vehicle' && r.owner_name) { const id = ensure(r, { name: r.owner_name, nid: r.owner_nid, addr: r.owner_addr, pref: r.owner_pref }, r.pv, { rtype: 'watch', grp: 6, role: 'เจ้าของรถ ' + [r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '') }); if (id && r.owner_pref !== id) { r.owner_pref = id; r._updatedAt = now; } }

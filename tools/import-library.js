@@ -3,8 +3,9 @@
 //   ต้องมี records-nas.json (ดึงจาก NAS) ใน Downloads · ได้ records-new.json → ส่งขึ้นด้วย import-data-to-nas.sh
 //   ต้อง deploy โค้ดที่มีเมนูห้องสมุดขึ้น NAS ก่อน (โค้ดเก่าไม่รู้จักเอกสารห้องสมุด)
 // กติกา: เอกสารที่มีในเว็บแล้ว (รหัสเดียวกัน) ข้าม ไม่ทับ · บุคคลในเอกสาร เซิร์ฟเวอร์ผูกการ์ดเองตอนรีสตาร์ท
-//   (หาการ์ดเดิมจากชื่อทุกจังหวัด ไม่มี → สร้างการ์ดบุคคลสำคัญ) — สคริปต์นี้แสดงผลที่คาดไว้ให้ตรวจก่อน
-const fs = require('fs'); const path = require('path');
+//   บุคคลในเอกสาร: ผูกเฉพาะการ์ดบุคคลสำคัญ (หาจากชื่อทุกจังหวัด) ไม่มี → สร้างการ์ดบุคคลสำคัญใหม่ในสคริปต์นี้ (ไม่ผูกการ์ดกลุ่มอื่น — ผู้ใช้เลือก)
+const fs = require('fs'); const path = require('path'); const crypto = require('crypto');
+const CAT = { polit: 'นักการเมือง (สส./สว./รัฐมนตรี)', expolit: 'อดีตนักการเมือง', local: 'นักการเมืองท้องถิ่น (นายก อบจ./เทศมนตรี/อบต./สจ.)', exlocal: 'อดีตนักการเมืองท้องถิ่น', leader: 'ผู้นำท้องถิ่น (กำนัน/ผู้ใหญ่บ้าน)', force: 'ผู้นำกองกำลังต่างชาติ', envoy: 'ทูต', acad: 'นักวิชาการ', gov: 'ผู้บริหารภาครัฐ' };
 const LIB = path.join(__dirname, '..', 'library');
 const cur = JSON.parse(fs.readFileSync('records-nas.json', 'utf8')); const records = cur.records || [];
 const before = records.length; const now = new Date().toISOString(); const out = [];
@@ -26,8 +27,15 @@ files.forEach((f) => {
   out.push('• ' + d.id + ' เพิ่มใหม่: ' + r.lib_title.slice(0, 70) + (r.lib_title.length > 70 ? '…' : ''));
   r.lib_persons.forEach((p) => {
     const hit = records.filter((x) => active(x) && ['watch', 'vip', 'bgcheck'].indexOf(x.rtype || 'watch') >= 0 && nk((x.fn || '') + (x.ln || '')) === nk(p.name));
-    const best = hit.find((x) => x.rtype === 'vip') || hit[0];
-    out.push('    👤 ' + (p.title ? p.title + ' ' : '') + p.name + ' → ' + (best ? 'ผูกการ์ดเดิม (' + (best.rtype === 'vip' ? 'บุคคลสำคัญ' : best.rtype === 'watch' ? 'กลุ่ม ' + best.grp : 'ตรวจสอบประวัติ') + ' จ.' + (best.pv || '-') + ')' + (hit.length > 1 ? ' ⚠ ชื่อนี้มี ' + hit.length + ' การ์ด' : '') : 'ยังไม่มี → เซิร์ฟเวอร์จะสร้างการ์ดบุคคลสำคัญ'));
+    const vip = hit.find((x) => x.rtype === 'vip'); const other = hit.filter((x) => x.rtype !== 'vip');
+    const nm = (p.title ? p.title + ' ' : '') + p.name; const note = other.length ? ' (ชื่อนี้มีการ์ดอื่นอีก ' + other.length + ' ใบ: ' + other.map((x) => (x.rtype === 'watch' ? 'กลุ่ม ' + x.grp : 'ตรวจสอบประวัติ') + ' จ.' + (x.pv || '-')).join(', ') + ' — รวมเองในหน้าตรวจสอบบุคคล)' : '';
+    if (vip) { p.pref = vip._id; out.push('    👤 ' + nm + ' → ผูกการ์ดบุคคลสำคัญเดิม จ.' + (vip.pv || '-') + note); return; }
+    const a = p.name.trim().split(/\s+/); const ck = CAT[p.vipCat] ? p.vipCat : 'polit';
+    const w = { _id: 'vl_' + crypto.createHash('md5').update(nk(p.name)).digest('hex').slice(0, 12), rtype: 'vip', pv: '', title: p.title || '', fn: a[0], ln: a.slice(1).join(' '), nid: '', nick: '', alias: '', ph: '',
+      addrReg: { house: '', moo: '', village: '', soi: '', road: '', prov: '', dist: '', subdist: '', zip: '' }, cats: [{ key: ck, label: CAT[ck], text: p.position || '' }],
+      _autoFrom: r._id, _status: 'verified', _verifiedBy: 'admin', _verifiedAt: now, _createdAt: now, _createdBy: 'admin' };
+    if (!records.some((x) => x && x._id === w._id)) records.push(w);
+    p.pref = w._id; out.push('    👤 ' + nm + ' → สร้างการ์ดบุคคลสำคัญใหม่ (' + CAT[ck] + ': ' + (p.position || '-') + ')' + note);
   });
 });
 fs.writeFileSync('records-new.json', JSON.stringify({ updatedAt: now, records }));
