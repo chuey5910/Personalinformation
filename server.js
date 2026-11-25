@@ -21,7 +21,7 @@
  *   POST /api/logout
  *   GET  /api/me                        → ข้อมูลผู้ใช้ที่ login อยู่
  *   GET  /api/records                   → {ok, records:[...]}            (ทุกคนที่ login)
- *   POST /api/records                   {records:[...]}                  (officer: เพิ่มได้อย่างเดียว / admin: เพิ่ม+แก้ไข)
+ *   POST /api/records                   {records:[...]}                  (officer: เพิ่มได้อย่างเดียว / admin: เพิ่ม+แก้ไข · ห้องสมุด rtype 'library' = admin เท่านั้น)
  *   POST /api/records/delete            {ids:[...]} หรือ {all:true}      (admin · หน.โต๊ะข่าว กก. ลบได้เฉพาะ {ids, dup:true} ทะเบียนบุคคลซ้ำ)
  *   GET  /api/users                     → รายชื่อผู้ใช้ทั้งหมด            (admin)
  *   POST /api/users/approve             {id, role?}                      (admin)
@@ -121,7 +121,8 @@ function viewOf(u, r) {
   if (r._edit && !(canVerifyRec(u, r) || r._edit.by === u.username)) { const o = Object.assign({}, r); delete o._edit; return o; }
   return r;
 }
-function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'watch' || t === 'vip' || t === 'bgcheck') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; if (t === 'event') return [r.ev_name, r.ev_date].filter(Boolean).join(' ') || r._id || ''; if (t === 'news') return [r.nw_ref, r.nw_title].filter(Boolean).join(' ') || r._id || ''; return r._id || ''; }
+const VIP_CAT_LABEL = { polit: 'นักการเมือง (สส./สว./รัฐมนตรี)', expolit: 'อดีตนักการเมือง', local: 'นักการเมืองท้องถิ่น (นายก อบจ./เทศมนตรี/อบต./สจ.)', exlocal: 'อดีตนักการเมืองท้องถิ่น', leader: 'ผู้นำท้องถิ่น (กำนัน/ผู้ใหญ่บ้าน)', force: 'ผู้นำกองกำลังต่างชาติ', envoy: 'ทูต', acad: 'นักวิชาการ', gov: 'ผู้บริหารภาครัฐ' };   // ตรงกับ VIP_CATS หน้าเว็บ
+function recLabel(r) { const t = r.rtype || 'watch'; if (t === 'library') return '[ห้องสมุด] ' + (r.lib_title || r._id || ''); if (t === 'watch' || t === 'vip' || t === 'bgcheck') return ((r.fn || '') + ' ' + (r.ln || '')).trim(); if (t === 'place') return r.pl_name || ''; if (t === 'org') return r.org_name || ''; if (t === 'case') return r.case_subject || ''; if (t === 'border') return r.bd_loc || ''; if (t === 'activity') return r.act_name || r.ac_name || ''; if (t === 'vehicle') return ([r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '')).trim() || r._id || ''; if (t === 'event') return [r.ev_name, r.ev_date].filter(Boolean).join(' ') || r._id || ''; if (t === 'news') return [r.nw_ref, r.nw_title].filter(Boolean).join(' ') || r._id || ''; return r._id || ''; }
 // ---- ทะเบียนบุคคลต้องมีทุกคนที่มีข้อมูลในระบบ: สร้างอัตโนมัติให้ชื่อคนในรายการอื่นที่ยังไม่มีทะเบียน แล้วผูก pref กลับ ----
 const AP_PFX = /^(นางสาว|นาวสาว|นาง|นาย|น\.ส\.)\s*/;
 const apNk = (s) => String(s || '').replace(AP_PFX, '').replace(/\s+/g, '');
@@ -131,7 +132,7 @@ const AP_RELIG = /มัสยิด|สุเหร่า|วัด|โบส�
 function apActive(r) { return r && !r._deleted && r._status !== 'returned'; }
 function apPhone(p) { let d = String(p || '').replace(/\D/g, ''); if (d.length === 9 && /^[689]/.test(d)) d = '0' + d; return d.length >= 9 ? d : ''; }
 function carryPrefs(ex, r) {
-  ['persons', 'ev_persons', 'act_persons', 'suspects', 'leaders', 'bd_persons', 'nw_persons'].forEach((k) => {
+  ['persons', 'ev_persons', 'act_persons', 'suspects', 'leaders', 'bd_persons', 'nw_persons', 'lib_persons'].forEach((k) => {
     if (!Array.isArray(ex[k]) || !Array.isArray(r[k])) return;
     r[k].forEach((p) => { if (!p || typeof p !== 'object' || p.pref) return; const q = ex[k].find((x) => x && x.pref && apNk(x.name) === apNk(p.name)); if (q) p.pref = q.pref; });
   });
@@ -140,12 +141,13 @@ function carryPrefs(ex, r) {
 }
 function ensurePersons() {
   const now = new Date().toISOString();
-  const byId = new Map(), pidx = new Map(), nidx = new Map();
+  const byId = new Map(), pidx = new Map(), nidx = new Map(), anyIdx = new Map();   // anyIdx = ชื่อ (ทุกจังหวัด) ใช้กับห้องสมุด
   records.forEach((r) => {
     if (!r || !r._id) return; byId.set(r._id, r);
     if (!apActive(r) || ['watch', 'vip', 'bgcheck'].indexOf(r.rtype || 'watch') < 0) return;
     [apNk((r.fn || '') + (r.ln || '')), apNk(((r.title || '') + (r.fn || '')) + (r.ln || ''))].forEach((k) => { const key = k + '|' + r.pv; if (!pidx.has(key)) pidx.set(key, r); });
     if (r.nid) nidx.set(r.nid, r); if (r.passport) nidx.set('PP' + r.passport, r);
+    const ak = apNk((r.fn || '') + (r.ln || '')); if (ak) { const o = anyIdx.get(ak); if (!o || (o.rtype !== 'vip' && r.rtype === 'vip')) anyIdx.set(ak, r); }
   });
   let created = 0;
   function ensure(parent, p, pv, spec) {
@@ -153,7 +155,7 @@ function ensurePersons() {
     if (!nm || AP_NONAME.test(nm)) return '';
     if (p.pref && byId.has(p.pref) && apActive(byId.get(p.pref))) return '';
     const k = apNk(nm) + '|' + pv;
-    let w = (p.nid && nidx.get(p.nid)) || (p.passport && nidx.get('PP' + p.passport)) || pidx.get(k);
+    let w = (p.nid && nidx.get(p.nid)) || (p.passport && nidx.get('PP' + p.passport)) || pidx.get(k) || (spec.anyPv ? anyIdx.get(apNk(nm)) : null);
     const id = w ? w._id : 'w16_' + crypto.createHash('md5').update(k).digest('hex').slice(0, 12);
     if (!w) w = byId.get(id);
     if (!w) {
@@ -173,7 +175,7 @@ function ensurePersons() {
       w._createdBy = parent._createdBy || 'auto'; w._createdAt = now; w._autoFrom = parent._id;
       if ((parent._status || 'verified') === 'verified') { w._status = 'verified'; w._verifiedBy = 'auto'; w._verifiedAt = now; } else w._status = 'pending';
       if (/^data:image\//.test(p.photo || '')) w.photo = p.photo;
-      records.push(w); byId.set(id, w); pidx.set(k, w); if (w.nid) nidx.set(w.nid, w); if (w.passport) nidx.set('PP' + w.passport, w); created++;
+      records.push(w); byId.set(id, w); pidx.set(k, w); if (spec.anyPv) anyIdx.set(apNk(nm), w); if (w.nid) nidx.set(w.nid, w); if (w.passport) nidx.set('PP' + w.passport, w); created++;
     } else if (w.rtype === 'watch' && spec.role && !(w.news || []).some((z) => z.role === spec.role)) {
       if (String(w._id).indexOf('w16_') !== 0) return w._id;
       w.news = (w.news || []).concat([{ date: '', who: '', role: spec.role, cat: '', move: '' }]);
@@ -201,6 +203,9 @@ function ensurePersons() {
       else spec = { rtype: 'watch', grp: 8, role: role };
       link(r, p, ensure(r, p, p.pv || r.pv, spec)); });
     else if (rt === 'border') (r.bd_persons || []).forEach((p) => link(r, p, ensure(r, p, r.pv, { rtype: 'vip', cat: 'force', catLabel: 'ผู้นำกองกำลังต่างชาติ', role: [p.role, p.side].filter(Boolean).join(' · ') })));
+    else if (rt === 'library') (r.lib_persons || []).forEach((p) => {   // ห้องสมุด: หาการ์ดเดิมจากชื่อ (ทุกจังหวัด) ไม่มี → สร้างบุคคลสำคัญ
+      const ck = VIP_CAT_LABEL[p.vipCat] ? p.vipCat : 'polit';
+      link(r, p, ensure(r, p, p.pv || '', { rtype: 'vip', cat: ck, catLabel: VIP_CAT_LABEL[ck], role: p.position || ('มีชื่อในเอกสาร: ' + (r.lib_title || '')), anyPv: true })); });
     else if (rt === 'vehicle' && r.owner_name) { const id = ensure(r, { name: r.owner_name, nid: r.owner_nid, addr: r.owner_addr, pref: r.owner_pref }, r.pv, { rtype: 'watch', grp: 6, role: 'เจ้าของรถ ' + [r.plateAlpha, r.plateNum].filter(Boolean).join(' ') + (r.veh_prov ? ' ' + r.veh_prov : '') }); if (id && r.owner_pref !== id) { r.owner_pref = id; r._updatedAt = now; } }
   });
   return created;
@@ -643,8 +648,11 @@ const server = http.createServer(async (req, res) => {
       incoming.forEach((r) => {
         if (!r || typeof r !== 'object') return;
         if (r.rtype === 'news') return;   // รายงานข่าวมาจากเว็บรายงานข่าวเท่านั้น (แก้ที่เว็บรายงานข่าว)
-        cleanRecordNames(r);
         const id = r._id ? String(r._id) : '';
+        // ห้องสมุด: เพิ่ม/แก้ได้เฉพาะ admin (ทั้งเอกสารใหม่ และห้ามเปลี่ยนประเภทรายการเดิมให้เป็น/ไม่เป็นห้องสมุด)
+        if (!isAdmin && (r.rtype === 'library' || (id && idx.has(id) && (records[idx.get(id)] || {}).rtype === 'library'))) { skipped++; return; }
+        if (id && idx.has(id) && ((records[idx.get(id)] || {}).rtype === 'library') !== (r.rtype === 'library')) { skipped++; return; }
+        cleanRecordNames(r);
         if (id && idx.has(id)) {
           const ex = records[idx.get(id)];
           // นับเฉพาะรายการที่เนื้อหาเปลี่ยนจริง (ไม่นับช่องสถานะ/การยืนยันที่เซิร์ฟเวอร์เป็นผู้กำหนด)

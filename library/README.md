@@ -1,6 +1,8 @@
 # ห้องสมุด (Library)
 
-ที่เก็บเอกสารรายงาน/สรุปข่าวสาร แยกไว้ต่างหาก **ยังไม่เข้าเว็บ** (จะนำเข้าเว็บภายหลังเมื่อผู้ใช้สั่ง)
+ต้นฉบับเอกสารรายงาน/สรุปข่าวสาร · ในเว็บคือเมนู 📚 ห้องสมุด (rtype `library`) — นำเข้าเว็บด้วย `tools/import-library.js` (เอกสารที่มีรหัสในเว็บแล้วจะข้าม)
+
+ช่องในเว็บ: `lib_title` `lib_unit` `lib_docDate` `lib_received` `lib_cats` `pv` `lib_tags` `lib_content` `lib_persons[{title,name,position,vipCat,pref}]` `lib_others` `lib_files` `lib_note`
 
 ## กติกา (ผู้ใช้กำหนดแล้ว)
 - เพิ่ม/แก้เอกสารได้เฉพาะ admin
